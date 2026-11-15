@@ -98,6 +98,11 @@ export async function markFailed(id: string, error: string): Promise<void> {
 }
 
 /** Resets all failed assets to pending (the "retry" button). */
+export async function resetIndex(): Promise<void> {
+  const conn = await getDb();
+  await conn.execAsync('DELETE FROM assets; DELETE FROM meta;');
+}
+
 export async function resetFailed(): Promise<number> {
   const conn = await getDb();
   const res = await conn.runAsync(

@@ -19,7 +19,6 @@ export function FileListScreen({ onBack }: { onBack: () => void }) {
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    setAll(null);
     listFiles()
       .then(setAll)
       .catch(e => setError(e instanceof Error ? e.message : String(e)));

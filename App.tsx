@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Button,
   KeyboardAvoidingView,
   Platform,
@@ -177,6 +178,32 @@ function HomeScreen({ onLogout }: { onLogout: () => void }) {
         <View style={styles.gap} />
         <Button title="View backed-up files" onPress={() => setView('files')} />
         <Button title="Log out" onPress={() => api.logout().then(onLogout)} />
+        <Button
+          title="Reset local index"
+          color="#c33"
+          disabled={busy}
+          onPress={() =>
+            Alert.alert(
+              'Reset local index?',
+              'Clears the upload history on this phone. Nothing on the server is touched — the next sync will re-upload everything.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Reset',
+                  style: 'destructive',
+                  onPress: () =>
+                    db
+                      .resetIndex()
+                      .then(refresh)
+                      .then(() => setStatus('Local index cleared'))
+                      .catch(e =>
+                        setStatus(e instanceof Error ? e.message : String(e)),
+                      ),
+                },
+              ],
+            )
+          }
+        />
       </View>
     </View>
   );

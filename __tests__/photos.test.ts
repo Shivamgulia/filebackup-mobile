@@ -9,18 +9,18 @@ const asset = (over: Partial<PhotoAsset>): PhotoAsset => ({
 });
 
 describe('computeTargetPath', () => {
-  it('builds photos/yyyy/MM/dd/<filename> with zero padding', () => {
-    expect(computeTargetPath(asset({}), '')).toBe('photos/2026/01/05/IMG_0001.jpg');
+  it('builds a flat photos/<filename> path (no date subdirectories)', () => {
+    expect(computeTargetPath(asset({}), '')).toBe('photos/IMG_0001.jpg');
   });
 
   it('scopes the path under the owner (per-user server rule)', () => {
-    expect(computeTargetPath(asset({}), 'testuser')).toBe('testuser/photos/2026/01/05/IMG_0001.jpg');
+    expect(computeTargetPath(asset({}), 'testuser')).toBe('testuser/photos/IMG_0001.jpg');
   });
 
   it('falls back to a sanitized id when filename is empty', () => {
     expect(
       computeTargetPath(asset({ filename: '', id: 'ph://ABC 12/34' }), ''),
-    ).toBe('photos/2026/01/05/ph___ABC_12_34');
+    ).toBe('photos/ph___ABC_12_34');
   });
 });
 
