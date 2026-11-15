@@ -8,7 +8,7 @@ export type PhotoAsset = {
   timestamp: number;
 };
 
-/** Server-side path convention: [owner/]photos/<yyyy>/<MM>/<dd>/<filename>.
+/** Server-side path convention: [owner/]photos/<filename> — flat, no date subdirectories.
  *  The server scopes uploads under `<username>/` for every user (admin included). */
 export function computeTargetPath(a: PhotoAsset, owner: string): string {
   const name = a.filename || a.id.replace(/[^a-zA-Z0-9._-]/g, '_');
