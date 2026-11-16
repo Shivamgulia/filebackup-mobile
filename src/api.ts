@@ -124,7 +124,16 @@ export async function me(): Promise<Me> {
   return res.json();
 }
 
-export type AdminUser = { username: string; suspended: boolean; createdAt: string };
+export type AdminUser = { username: string; role: string; suspended: boolean; createdAt: string };
+
+export async function setUserRole(target: string, role: 'user' | 'admin'): Promise<void> {
+  const res = await apiFetch(`/api/admin/users/${encodeURIComponent(target)}/role`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role }),
+  });
+  if (!res.ok) throw new Error((await res.json())?.message ?? `Role change failed (${res.status})`);
+}
 
 export async function listUsers(): Promise<AdminUser[]> {
   const res = await apiFetch('/api/admin/users');
