@@ -16,6 +16,7 @@ import { syncAndUpload } from './src/sync';
 import { retryFailed } from './src/upload';
 import { registerSyncTask } from './src/background';
 import { FileListScreen } from './src/FileListScreen';
+import { AdminUsersScreen } from './src/AdminUsersScreen';
 import * as db from './src/db';
 import type { AssetRow } from './src/db';
 
@@ -103,13 +104,14 @@ function LoginScreen({ onDone }: { onDone: () => void }) {
 }
 
 function HomeScreen({ onLogout }: { onLogout: () => void }) {
-  const [view, setView] = useState<'home' | 'files'>('home');
+  const [view, setView] = useState<'home' | 'files' | 'admin'>('home');
   const [server, setServer] = useState('');
   const [counts, setCounts] = useState({ total: 0, uploaded: 0, pending: 0, failed: 0 });
   const [failedRows, setFailedRows] = useState<AssetRow[]>([]);
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const refresh = useCallback(async () => {
     setCounts(await db.getStateCounts());
@@ -139,12 +141,16 @@ function HomeScreen({ onLogout }: { onLogout: () => void }) {
     setServer(api.getServerUrl());
     registerSyncTask();
     refresh();
+    api.me().then(m => setIsAdmin(m.admin)).catch(() => setIsAdmin(false));
     // On-open backfill: catches anything missed while the app was closed.
     runSync('sync');
   }, [refresh, runSync]);
 
   if (view === 'files') {
     return <FileListScreen onBack={() => setView('home')} />;
+  }
+  if (view === 'admin') {
+    return <AdminUsersScreen onBack={() => setView('home')} />;
   }
 
   return (
@@ -177,6 +183,9 @@ function HomeScreen({ onLogout }: { onLogout: () => void }) {
         )}
         <View style={styles.gap} />
         <Button title="View backed-up files" onPress={() => setView('files')} />
+        {isAdmin && (
+          <Button title="User management" onPress={() => setView('admin')} />
+        )}
         <Button title="Log out" onPress={() => api.logout().then(onLogout)} />
         <Button
           title="Reset local index"

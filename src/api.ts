@@ -112,3 +112,49 @@ export async function healthCheck(): Promise<string> {
   if (!res.ok) throw new Error(`Health check failed (${res.status})`);
   return res.text();
 }
+
+// --- role + admin user management ---
+
+export type Me = { username: string; admin: boolean };
+
+/** Fetches the token's role info (admin flag comes from the server's config, not the client). */
+export async function me(): Promise<Me> {
+  const res = await apiFetch('/api/auth/me');
+  if (!res.ok) throw new Error(`Whoami failed (${res.status})`);
+  return res.json();
+}
+
+export type AdminUser = { username: string; suspended: boolean; createdAt: string };
+
+export async function listUsers(): Promise<AdminUser[]> {
+  const res = await apiFetch('/api/admin/users');
+  if (!res.ok) throw new Error(`List users failed (${res.status})`);
+  return res.json();
+}
+
+export async function createUser(username: string, password: string): Promise<void> {
+  const res = await apiFetch('/api/admin/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) throw new Error((await res.json())?.message ?? `Create failed (${res.status})`);
+}
+
+export async function changePassword(target: string, password: string): Promise<void> {
+  const res = await apiFetch(`/api/admin/users/${encodeURIComponent(target)}/password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  if (!res.ok) throw new Error((await res.json())?.message ?? `Password change failed (${res.status})`);
+}
+
+export async function setSuspended(target: string, suspended: boolean): Promise<void> {
+  const res = await apiFetch(`/api/admin/users/${encodeURIComponent(target)}/suspension`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ suspended }),
+  });
+  if (!res.ok) throw new Error((await res.json())?.message ?? `Suspension failed (${res.status})`);
+}
