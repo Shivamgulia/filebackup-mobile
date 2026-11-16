@@ -11,6 +11,8 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import * as api from './src/api';
 import { syncAndUpload } from './src/sync';
 import { retryFailed } from './src/upload';
@@ -19,6 +21,7 @@ import { FileListScreen } from './src/FileListScreen';
 import { AdminUsersScreen } from './src/AdminUsersScreen';
 import * as db from './src/db';
 import type { AssetRow } from './src/db';
+import { colors, radius, type as typeScale } from './src/theme';
 
 export default function App() {
   const [state, setState] = useState<'loading' | 'login' | 'home'>('loading');
@@ -27,17 +30,19 @@ export default function App() {
     api.restoreSession().then(ok => setState(ok ? 'home' : 'login'));
   }, []);
 
-  if (state === 'loading') {
-    return (
-      <View style={[styles.screen, styles.centered]}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-  return state === 'login' ? (
-    <LoginScreen onDone={() => setState('home')} />
-  ) : (
-    <HomeScreen onLogout={() => setState('login')} />
+  return (
+    <SafeAreaProvider>
+      <StatusBar style="dark" />
+      {state === 'loading' ? (
+        <View style={[styles.screen, styles.centered]}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : state === 'login' ? (
+        <LoginScreen onDone={() => setState('home')} />
+      ) : (
+        <HomeScreen onLogout={() => setState('login')} />
+      )}
+    </SafeAreaProvider>
   );
 }
 
@@ -63,6 +68,7 @@ function LoginScreen({ onDone }: { onDone: () => void }) {
   }
 
   return (
+    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
     <KeyboardAvoidingView
       style={styles.screen}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -100,6 +106,7 @@ function LoginScreen({ onDone }: { onDone: () => void }) {
         )}
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -154,8 +161,8 @@ function HomeScreen({ onLogout }: { onLogout: () => void }) {
   }
 
   return (
-    <View style={styles.screen}>
-      <View style={styles.centered}>
+    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
+      <ScrollView contentContainerStyle={styles.centered}>
         <Text style={styles.title}>FileBackup</Text>
         <Text style={styles.status}>Server: {server}</Text>
         <Text style={styles.counts}>
@@ -213,30 +220,33 @@ function HomeScreen({ onLogout }: { onLogout: () => void }) {
             )
           }
         />
-      </View>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1 },
+  screen: { flex: 1, backgroundColor: colors.bg },
   centered: {
     flex: 1,
     justifyContent: 'center',
     padding: 24,
     gap: 12,
   },
-  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 12 },
+  title: { ...typeScale.title, fontSize: 28, textAlign: 'center', marginBottom: 12 },
   input: {
-    borderWidth: 1,
-    borderColor: '#999',
-    borderRadius: 6,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    borderRadius: radius.sm,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    fontSize: 15,
+    color: colors.fg,
   },
-  error: { color: '#c00' },
-  status: { textAlign: 'center' },
-  counts: { textAlign: 'center', fontWeight: '600' },
+  error: { color: colors.danger, textAlign: 'center' },
+  status: { ...typeScale.sub, textAlign: 'center' },
+  counts: { ...typeScale.body, fontWeight: '600', textAlign: 'center' },
   gap: { height: 12 },
   spinner: { marginVertical: 8 },
 });

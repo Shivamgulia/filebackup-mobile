@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Button, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { listFiles, type FileSummary } from './api';
 import { FileViewerScreen } from './FileViewerScreen';
+import { colors, type as typeScale } from './theme';
 
 const PAGE_SIZE = 20;
 
@@ -54,7 +56,7 @@ export function FileListScreen({ onBack }: { onBack: () => void }) {
   }
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <Text style={styles.title}>
         Backed up files ({all.length})
       </Text>
@@ -81,17 +83,17 @@ export function FileListScreen({ onBack }: { onBack: () => void }) {
         }
       />
       <Button title="Back" onPress={onBack} />
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, paddingTop: 60, paddingHorizontal: 16 },
+  screen: { flex: 1, paddingHorizontal: 16, backgroundColor: colors.bg },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
-  title: { fontSize: 20, fontWeight: 'bold', marginBottom: 8 },
-  row: { paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#ccc' },
-  path: { fontSize: 14 },
-  meta: { fontSize: 12, color: '#666', marginTop: 2 },
+  title: { ...typeScale.title, fontSize: 20, marginBottom: 8 },
+  row: { paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  path: { fontSize: 14, color: colors.fg },
+  meta: { fontSize: 12, color: colors.muted, marginTop: 2 },
   footer: { marginVertical: 12 },
-  error: { color: '#c00' },
+  error: { color: colors.danger },
 });
