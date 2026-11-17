@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import * as api from '../api';
 import { syncAndUpload } from '../sync';
 import { registerSyncTask } from '../background';
@@ -23,7 +23,6 @@ export function HomeScreen() {
   const [username, setUsername] = useState('');
   const [counts, setCounts] = useState({ total: 0, uploaded: 0, pending: 0, failed: 0 });
   const [lastSync, setLastSync] = useState<string | null>(null);
-  const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -36,10 +35,9 @@ export function HomeScreen() {
     async () => {
       setBusy(true);
       try {
-        const r = await syncAndUpload();
-        setNotice(r.failed > 0 ? `${r.failed} uploads failed — see details` : '');
+        await syncAndUpload();
       } catch (e) {
-        setNotice(e instanceof Error ? e.message : String(e));
+        console.warn('sync failed:', e);
       } finally {
         setBusy(false);
         await refresh();
@@ -58,6 +56,12 @@ export function HomeScreen() {
       runSync();
     });
   }, [refresh, runSync]);
+
+  // Status must be correct on every return (J3): retries done on the failed
+  // screen only land in the local index — refetch counts whenever home regains focus.
+  useFocusEffect(useCallback(() => {
+    void Promise.resolve().then(() => refresh());
+  }, [refresh]));
 
   const left = counts.pending + counts.failed;
   const status: SyncStatus = busy
@@ -91,11 +95,6 @@ export function HomeScreen() {
             <Text style={[styles.status, { color: status.color }]}>{status.text}</Text>
           </Pressable>
           {lastSync && <Text style={type.sub}>Last synced {lastSync}</Text>}
-          {notice !== '' && !busy && (
-            <TouchableOpacity onPress={() => router.push('/failed')}>
-              <Text style={styles.notice}>{notice}</Text>
-            </TouchableOpacity>
-          )}
           <TouchableOpacity
             style={[styles.primaryButton, busy && styles.disabled]}
             disabled={busy}
@@ -148,7 +147,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   status: { fontSize: 17, fontWeight: '600' },
-  notice: { ...type.sub, color: colors.danger },
   primaryButton: {
     backgroundColor: colors.primary,
     borderRadius: radius.control,
