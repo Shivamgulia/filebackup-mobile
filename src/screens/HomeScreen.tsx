@@ -115,6 +115,13 @@ export function HomeScreen() {
             <Text style={styles.rowLabel}>Photos & Videos</Text>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.row, styles.divider]}
+            onPress={() => router.push({ pathname: '/files', params: { search: '1' } })}
+            hitSlop={{ top: 8, bottom: 8 }}>
+            <Text style={styles.rowLabel}>Search</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -161,6 +168,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: 44,
+  },
+  divider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    marginTop: spacing.xs,
+    paddingTop: spacing.sm,
   },
   rowLabel: { ...type.headline },
   chevron: { color: colors.faint, fontSize: 22, fontWeight: '600' },
