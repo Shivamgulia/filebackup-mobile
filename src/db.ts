@@ -73,6 +73,8 @@ export type AssetRow = {
   error?: string | null;
   /** unix seconds the asset was created (mirrors the media library timestamp) */
   created_at: number;
+  /** unix seconds of the last state change (upload success/failure) */
+  updated_at: number;
 };
 
 export async function getAsset(id: string): Promise<AssetRow | null> {

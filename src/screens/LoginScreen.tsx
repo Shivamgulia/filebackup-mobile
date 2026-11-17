@@ -86,7 +86,7 @@ export function LoginScreen() {
               {busy ? (
                 <ActivityIndicator color={colors.onPrimary} />
               ) : (
-                <Text style={styles.primaryButtonText}>Log in</Text>
+                <Text style={styles.primaryButtonText}>Sign in</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
-  sectionTitle: { ...type.section, textTransform: 'uppercase' },
+  sectionTitle: { ...type.caption, textTransform: 'uppercase' },
   input: {
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,

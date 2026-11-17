@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { listFiles, type FileSummary } from '../api';
-import { colors, spacing, type as typeScale } from '../theme';
+import { colors, spacing, type } from '../theme';
 
 const PAGE_SIZE = 20;
 
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   backLink: { color: colors.primary, fontSize: 16, fontWeight: '600', width: 64 },
-  screenTitle: { flex: 1, textAlign: 'center', ...typeScale.title, fontSize: 20 },
+  screenTitle: { flex: 1, textAlign: 'center', ...type.headline },
   count: {
     width: 64,
     textAlign: 'right',

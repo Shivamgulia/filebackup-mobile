@@ -33,8 +33,9 @@ export const spacing = {
 } as const;
 
 export const type = {
-  title: { fontSize: 22, fontWeight: '700', color: colors.fg, letterSpacing: -0.3 },
-  section: { fontSize: 13, fontWeight: '600', color: colors.muted, letterSpacing: 0.2 },
-  body: { fontSize: 15, color: colors.fg },
-  sub: { fontSize: 13, color: colors.muted },
+  title: { fontSize: 28, fontWeight: '700', color: colors.fg, letterSpacing: -0.4 },
+  headline: { fontSize: 17, fontWeight: '600', color: colors.fg },
+  body: { fontSize: 17, color: colors.fg },
+  sub: { fontSize: 15, color: colors.muted },
+  caption: { fontSize: 12, fontWeight: '600', color: colors.muted, letterSpacing: 0.3 },
 } as const;

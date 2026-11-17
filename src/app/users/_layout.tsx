@@ -1,13 +1,12 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
+import { Slot, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as api from '../api';
-import { AdminUsersScreen } from '../screens/AdminUsersScreen';
-import { colors } from '../theme';
+import * as api from '../../api';
+import { colors } from '../../theme';
 
-/** Admin-only. Self-guarded: non-admins (even via deep link) are redirected home. */
-export default function Admin() {
+/** One admin guard for every /users screen — deep links included. */
+export default function UsersLayout() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -27,7 +26,7 @@ export default function Admin() {
     router.replace('/home');
     return null;
   }
-  return <AdminUsersScreen />;
+  return <Slot />;
 }
 
 const styles = StyleSheet.create({
