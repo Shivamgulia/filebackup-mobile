@@ -210,3 +210,16 @@ Before delivering any UI code, verify:
 - [ ] Responsive: 375px, 768px, 1024px, 1440px
 - [ ] No content hidden behind fixed navbars
 - [ ] No horizontal scroll on mobile
+
+---
+
+## React Native adaptation (2026-11-18)
+
+This MASTER.md was generated from web-flavored guidance. How it maps to this React Native app (`src/theme.ts` is the executable form):
+
+- **System font only** — no web font loading; hierarchy comes from weight/size, not typefaces. Type scale: title 22/700 (-0.3 tracking), section label 13/600 uppercase + tracking 0.2, body 15, sub 13.
+- **Colors** — same palette; `primarySoft` (#DCFCE7) replaces web hover/selected states. `border` = `#E2EFE7` hairlines (`StyleSheet.hairlineWidth`).
+- **Spacing** — 4/8/12/16/24/32; screen padding 16, section gap 24, card padding 16, in-card gap 12. Touch targets ≥ 44pt with ≥ 8pt gaps.
+- **Radius** — 16 cards, 10 controls/inputs, 99 for pills/badges.
+- **Shadows: none, anywhere.** Flat surfaces separated by hairline borders and the green-tinted bg (#F0FDF4) vs white cards.
+- **Web-only anti-patterns** (cursor:pointer, hover transitions, responsive breakpoints, focus rings) do not apply; "no emojis as icons" and contrast minimums still do. Suspended/failed uses amber #D97706 / red #DC2626 at 4.5:1+ on white.

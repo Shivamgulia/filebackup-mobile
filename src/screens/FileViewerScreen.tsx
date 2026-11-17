@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Button, Image, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { File, Paths } from 'expo-file-system';
-import { authHeaders, deleteFile, getServerUrl, type FileSummary } from './api';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { authHeaders, deleteFile, getServerUrl, type FileSummary } from '../api';
 
 const VIDEO_RE = /\.(mov|mp4|m4v|avi|webm|mkv)$/i;
 
@@ -59,13 +60,17 @@ export function FileViewerScreen({ item, onBack, onDeleted }: {
     ]);
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <View style={styles.topbar}>
-        <Button title="‹ Back" onPress={onBack} />
+        <TouchableOpacity onPress={onBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Text style={styles.topAction}>‹ Back</Text>
+        </TouchableOpacity>
         <Text style={styles.name} numberOfLines={1}>
           {item.path.split('/').pop()}
         </Text>
-        <Button title="Delete" color="#c33" onPress={confirmDelete} />
+        <TouchableOpacity onPress={confirmDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Text style={[styles.topAction, styles.delete]}>Delete</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.content}>
         {error !== '' ? (
@@ -78,21 +83,22 @@ export function FileViewerScreen({ item, onBack, onDeleted }: {
           <Image source={{ uri }} style={styles.media} resizeMode="contain" />
         )}
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#000' },
   topbar: {
-    paddingTop: 60,
-    paddingHorizontal: 12,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
-  name: { color: '#fff', flex: 1 },
+  topAction: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  delete: { color: '#f66' },
+  name: { color: '#fff', flex: 1, textAlign: 'center' },
   content: { flex: 1, justifyContent: 'center' },
   media: { flex: 1 },
   error: { color: '#f66', textAlign: 'center', padding: 24 },

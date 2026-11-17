@@ -10,12 +10,13 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as api from './api';
-import type { AdminUser } from './api';
-import { colors, radius, type } from './theme';
+import { router } from 'expo-router';
+import * as api from '../api';
+import type { AdminUser } from '../api';
+import { colors, radius, type } from '../theme';
 
 /** Admin-only user management: list, create, password change, suspend/unsuspend, role select. */
-export function AdminUsersScreen({ onBack }: { onBack: () => void }) {
+export function AdminUsersScreen() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
@@ -83,7 +84,7 @@ export function AdminUsersScreen({ onBack }: { onBack: () => void }) {
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.header}>
-          <TouchableOpacity onPress={onBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 16 }}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 16 }}>
             <Text style={styles.back}>‹ Back</Text>
           </TouchableOpacity>
           <Text style={styles.screenTitle}>User management</Text>
@@ -230,7 +231,7 @@ const styles = StyleSheet.create({
   screenTitle: { flex: 1, textAlign: 'center', ...type.title },
   card: {
     backgroundColor: colors.card,
-    borderRadius: radius.md,
+    borderRadius: radius.card,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     padding: 16,
@@ -241,14 +242,14 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    borderRadius: radius.sm,
+    borderRadius: radius.control,
     padding: 12,
     fontSize: 15,
     color: colors.fg,
     backgroundColor: colors.card,
   },
   blockButton: {
-    borderRadius: radius.sm,
+    borderRadius: radius.control,
     paddingVertical: 12,
     alignItems: 'center',
     backgroundColor: colors.bg,
