@@ -18,24 +18,23 @@
 
 | Role | Hex | CSS Variable |
 |------|-----|--------------|
-| Primary | `#15803D` | `--color-primary` |
+| Primary | `#2E5E4F` | `--color-primary` |
+| Primary Tint | `#E8F0EC` | `--color-primary-soft` |
 | On Primary | `#FFFFFF` | `--color-on-primary` |
-| Secondary | `#059669` | `--color-secondary` |
-| On Secondary | `#000000` | `--color-on-secondary` |
-| Accent/CTA | `#D97706` | `--color-accent` |
-| On Accent/CTA | `#000000` | `--color-on-accent` |
-| Background | `#F0FDF4` | `--color-background` |
-| Foreground | `#0F172A` | `--color-foreground` |
+| Secondary | `#527A6B` | `--color-secondary` |
+| Secondary Tint | `#EDF3EF` | `--color-secondary-soft` |
+| Tertiary (warning) | `#9C6B3D` | `--color-tertiary` |
+| On Tertiary | `#FFFFFF` | `--color-on-tertiary` |
+| Background | `#F2F2F7` | `--color-background` |
+| Foreground | `#1C1C1E` | `--color-foreground` |
 | Card | `#FFFFFF` | `--color-card` |
-| Card Foreground | `#0F172A` | `--color-card-foreground` |
-| Muted | `#F0F7F3` | `--color-muted` |
-| Muted Foreground | `#475569` | `--color-muted-foreground` |
-| Border | `#E2EFE7` | `--color-border` |
-| Destructive | `#DC2626` | `--color-destructive` |
+| Muted text | `#6E6E73` | `--color-muted-foreground` |
+| Faint text | `#AEAEB2` | `--color-faint` |
+| Border | `#E5E5EA` | `--color-border` |
+| Destructive | `#C0392B` | `--color-destructive` |
 | On Destructive | `#FFFFFF` | `--color-on-destructive` |
-| Ring | `#15803D` | `--color-ring` |
 
-**Color Notes:** Nature green + sun yellow
+**Color Notes (updated 2026-11-18):** Classy complementary system — Apple neutral grays carry the UI; primary #2E5E4F (deep forest) and secondary #527A6B (sage) are analogous greens; tertiary #9C6B3D (bronze) sits in the split-complement zone and is reserved for the suspended/warning badge only; destructive #C0392B. Original note: nature green + sun yellow
 
 ### Typography
 

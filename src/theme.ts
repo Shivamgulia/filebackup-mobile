@@ -1,23 +1,35 @@
 /**
- * App-wide design tokens — green "easy on the eyes" system
- * (source of truth: design-system/filebackup-mobile/MASTER.md).
- * Palette: soft green-tinted surfaces, deep green for actions, amber for warnings,
- * red only for destructive. No shadows, hairline borders, generous spacing.
+ * App-wide design tokens — classy complementary system
+ * (source of truth: design-system/filebackup-mobile/MASTER.md + agent/plans/mobile-ux/design.md).
+ *
+ * Color roles (complementary harmony, muted so it reads classy):
+ * - Neutrals carry ~90% of the UI — Apple system grays (iOS systemGroupedBackground,
+ *   label, separator). Accents are muted and rare.
+ * - PRIMARY  #2E5E4F deep forest — CTAs, links/back, + New, avatar, "All synced",
+ *   admin badge, focus. The one accent.
+ * - SECONDARY #527A6B sage — in-progress state ("Syncing", spinners), quiet/Cancel
+ *   buttons, selected states. Green at rest, never competing with primary.
+ * - TERTIARY #9C6B3D bronze — suspended/warning badge only. The single warm accent
+ *   (sits in green's split-complement zone).
+ * - DANGER #C0392B muted brick — destructive text/actions and failures only.
+ * No shadows, hairline borders, generous spacing. Type: iOS text styles via system font.
  */
 export const colors = {
-  bg: '#F0FDF4', // app background
+  bg: '#F2F2F7', // app background (iOS systemGroupedBackground)
   card: '#FFFFFF', // surfaces
-  fg: '#0F172A', // primary text
-  muted: '#475569', // secondary text
-  faint: '#94A3B8', // placeholder-level text
-  border: '#E2EFE7', // hairlines
-  primary: '#15803D', // actions, links, focus
+  fg: '#1C1C1E', // primary text (iOS label)
+  muted: '#6E6E73', // secondary text (iOS secondaryLabel)
+  faint: '#AEAEB2', // placeholder-level text (iOS tertiaryLabel)
+  border: '#E5E5EA', // hairlines (iOS separator)
+  primary: '#2E5E4F', // CTAs, links, focus
   onPrimary: '#FFFFFF',
-  primarySoft: '#DCFCE7', // selected/tinted backgrounds
-  success: '#15803D',
-  warning: '#D97706', // suspended marker (amber, AA on card)
+  primarySoft: '#E8F0EC', // selected/tinted backgrounds
+  secondary: '#527A6B', // in-progress state, quiet buttons
+  secondarySoft: '#EDF3EF',
+  success: '#2E5E4F',
+  warning: '#9C6B3D', // tertiary: suspended marker (bronze, AA on card)
   onWarning: '#FFFFFF',
-  danger: '#DC2626',
+  danger: '#C0392B',
   onDanger: '#FFFFFF',
 } as const;
 

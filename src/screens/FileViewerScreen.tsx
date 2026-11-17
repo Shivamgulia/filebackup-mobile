@@ -4,6 +4,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { File, Paths } from 'expo-file-system';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authHeaders, deleteFile, getServerUrl, type FileSummary } from '../api';
+import { colors } from '../theme';
 
 const VIDEO_RE = /\.(mov|mp4|m4v|avi|webm|mkv)$/i;
 
@@ -97,9 +98,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   topAction: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  delete: { color: '#f66' },
+  delete: { color: colors.danger },
   name: { color: '#fff', flex: 1, textAlign: 'center' },
   content: { flex: 1, justifyContent: 'center' },
   media: { flex: 1 },
-  error: { color: '#f66', textAlign: 'center', padding: 24 },
+  error: { color: colors.danger, textAlign: 'center', padding: 24 },
 });
