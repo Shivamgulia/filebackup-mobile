@@ -13,7 +13,7 @@ export default function Gate() {
   return (
     <SafeAreaView style={styles.screen}>
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.secondary} />
       </View>
     </SafeAreaView>
   );

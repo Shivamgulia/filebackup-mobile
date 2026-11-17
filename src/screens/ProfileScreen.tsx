@@ -43,7 +43,7 @@ export function ProfileScreen() {
   if (me === null) {
     return (
       <SafeAreaView style={[styles.screen, styles.centered]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.secondary} />
       </SafeAreaView>
     );
   }

@@ -65,11 +65,11 @@ export function HomeScreen() {
 
   const left = counts.pending + counts.failed;
   const status: SyncStatus = busy
-    ? { text: `Syncing… ${left} left`, color: colors.muted, tappable: false }
+    ? { text: `Syncing… ${left} left`, color: colors.secondary, tappable: false }
     : counts.failed > 0
       ? { text: `${counts.failed} uploads failed`, color: colors.danger, tappable: true }
       : left > 0
-        ? { text: `Syncing… ${left} left`, color: colors.muted, tappable: false }
+        ? { text: `Syncing… ${left} left`, color: colors.secondary, tappable: false }
         : { text: 'All synced ✓', color: colors.primary, tappable: false };
 
   return (

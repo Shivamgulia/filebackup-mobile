@@ -56,7 +56,7 @@ export function FileListScreen() {
   if (all === null) {
     return (
       <SafeAreaView style={[styles.screen, styles.centered]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.secondary} />
       </SafeAreaView>
     );
   }
@@ -101,7 +101,7 @@ export function FileListScreen() {
         )}
         ListFooterComponent={
           visible < all.length
-            ? <ActivityIndicator style={styles.footer} color={colors.primary} />
+            ? <ActivityIndicator style={styles.footer} color={colors.secondary} />
             : all.length === 0
               ? <Text style={[styles.meta, styles.empty]}>Nothing backed up yet</Text>
               : undefined

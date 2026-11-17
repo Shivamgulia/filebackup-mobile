@@ -62,7 +62,7 @@ export function FailedScreen() {
       </TouchableOpacity>
       {rows === null ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.secondary} />
         </View>
       ) : rows.length === 0 ? (
         <View style={styles.centered}>

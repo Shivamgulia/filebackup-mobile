@@ -44,7 +44,7 @@ export function UsersListScreen() {
         </View>
       ) : users === null ? (
         <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.secondary} />
         </View>
       ) : (
         <FlatList

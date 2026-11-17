@@ -69,7 +69,7 @@ export function UserEditScreen() {
   if (user === null) {
     return (
       <SafeAreaView style={[styles.screen, styles.centered]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.secondary} />
         {error !== '' && <Text style={styles.error}>{error}</Text>}
       </SafeAreaView>
     );
@@ -141,7 +141,7 @@ export function UserEditScreen() {
           </TouchableOpacity>
         </View>
 
-        {busy && <ActivityIndicator style={styles.spinner} color={colors.primary} />}
+        {busy && <ActivityIndicator style={styles.spinner} color={colors.secondary} />}
       </ScrollView>
     </SafeAreaView>
   );
