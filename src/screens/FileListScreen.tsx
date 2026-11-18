@@ -41,6 +41,8 @@ export function FileListScreen() {
   const [query, setQuery] = useState('');
   const [sortKey, setSortKey] = useState<(typeof SORTS)[number]['key']>('newest');
   const [searchActive, setSearchActive] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [isSelectMode, setSelectMode] = useState(false);
   const inputRef = useRef<TextInputInstance>(null);
 
   // Refetch on every focus — covers deletes made in the viewer and app re-opens.
@@ -110,7 +112,37 @@ export function FileListScreen() {
     Alert.alert('Sort by', undefined, buttons);
   }
 
-  if (error !== '') {
+  function deleteSelected() {
+    if (selected.size === 0) return;
+    Alert.alert(
+      'Delete ' + selected.size + ' item' + (selected.size === 1 ? '' : 's') + '?',
+      'This will remove the selected files from the server (your phone library is untouched).',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            const paths = Array.from(selected);
+            setAll(l => l?.filter(f => !paths.includes(f.path)) ?? null);
+            setSelected(new Set());
+            setSelectMode(false);
+          },
+        },
+      ],
+    );
+  }
+
+
+
+  function toggleSelect(itemPath: string) {
+    setSelected(s => {
+      const ns = new Set(s);
+      if (s.has(itemPath)) ns.delete(itemPath); else ns.add(itemPath);
+      return ns;
+    });
+    setSelectMode(selected.size > 0 || isSelectMode); // enter mode when first item toggled
+  }  if (error !== '') {
     return (
       <SafeAreaView style={[styles.screen, styles.centered]}>
         <Text style={styles.error}>{error}</Text>
@@ -180,19 +212,23 @@ export function FileListScreen() {
         renderItem={({ item }) => (
           <Pressable
             style={styles.row}
-            onPress={() =>
-              router.push({
-                pathname: '/viewer',
-                params: {
-                  path: item.path,
-                  sizeBytes: String(item.sizeBytes),
-                  versionCount: String(item.versionCount),
-                  lastModified: String(item.lastModified),
-                },
-              })
-            }
+            onPress={() => {
+              if (!isSelectMode) {
+                router.push({
+                  pathname: '/viewer',
+                  params: {
+                    path: item.path,
+                    sizeBytes: String(item.sizeBytes),
+                    versionCount: String(item.versionCount),
+                    lastModified: String(item.lastModified),
+                  },
+                });
+              } else {
+                toggleSelect(item.path);
+              }
+            }}
             onLongPress={() => confirmDelete(item)}>
-            <Text style={styles.path} numberOfLines={1}>{item.path}</Text>
+            <Text style={styles.path} numberOfLines={1}>\n              {selected.has(item.path) ? '✓ ' : ''}{item.path}\n            </Text>
             <Text style={styles.meta}>
               {mb(item.sizeBytes)} · v{item.versionCount} ·{' '}
               {new Date(item.lastModified).toLocaleString()}
