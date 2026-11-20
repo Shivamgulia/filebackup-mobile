@@ -143,3 +143,14 @@ export async function setMeta(key: string, value: string): Promise<void> {
     key, value,
   );
 }
+
+/** Get the sync start timestamp (unix seconds). */
+export function getSyncStartedAt(): number {
+  const val = getMeta('sync_started_at');
+  return val ? Number(val) : 0;
+}
+
+/** Set the sync start timestamp (unix seconds). */
+export function setSyncStartedAt(timestamp: number): void {
+  setMeta('sync_started_at', String(timestamp));
+}
