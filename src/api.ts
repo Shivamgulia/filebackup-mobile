@@ -76,7 +76,12 @@ export type FileSummary = {
 
 /** Lists backed-up files under this user's photos prefix. */
 export async function listFiles(): Promise<FileSummary[]> {
-  const res = await apiFetch(`/api/files?prefix=${encodeURIComponent(`${username}/photos/`)}`);
+  return listFilesAt(`${username}/photos/`);
+}
+
+/** Lists files under any prefix the caller can read (own prefix, or a folder shared with them). */
+export async function listFilesAt(prefix: string): Promise<FileSummary[]> {
+  const res = await apiFetch(`/api/files?prefix=${encodeURIComponent(prefix)}`);
   if (!res.ok) throw new Error(`List failed (${res.status})`);
   return res.json();
 }
@@ -166,4 +171,86 @@ export async function setSuspended(target: string, suspended: boolean): Promise<
     body: JSON.stringify({ suspended }),
   });
   if (!res.ok) throw new Error((await res.json())?.message ?? `Suspension failed (${res.status})`);
+}
+
+// --- sharing ---
+
+export type ShareStatus = 'pending' | 'accepted' | 'declined';
+
+export type Share = {
+  shareId: string;
+  ownerUsername: string;
+  targetUsername: string;
+  resourcePath: string;
+  permission: 'read' | 'read_write';
+  status: ShareStatus;
+  directory?: boolean;
+  createdAt: string;
+  expiresAt: string | null;
+  revoked: boolean;
+};
+
+export type CreateShareInput = {
+  targetUsername: string;
+  resourcePath: string;
+  permission: 'read' | 'read_write';
+  expiresAt?: string | null;
+};
+
+/** Shares a file/folder path; it stays pending until the recipient accepts. */
+export async function createShare(input: CreateShareInput): Promise<Share> {
+  const params = new URLSearchParams({
+    targetUsername: input.targetUsername,
+    resourcePath: input.resourcePath,
+    permission: input.permission,
+  });
+  if (input.expiresAt) params.set('expiresAt', input.expiresAt);
+  const res = await apiFetch(`/api/shares?${params.toString()}`);
+  if (!res.ok) throw new Error(`Share failed (${res.status})`);
+  return res.json();
+}
+
+export async function listOutgoingShares(): Promise<Share[]> {
+  const res = await apiFetch('/api/shares');
+  if (!res.ok) throw new Error(`List shares failed (${res.status})`);
+  return res.json();
+}
+
+/** Shares other users created for this account, pending ones included. */
+export async function listIncomingShares(): Promise<Share[]> {
+  const res = await apiFetch('/api/shares/incoming');
+  if (!res.ok) throw new Error(`List shared files failed (${res.status})`);
+  return res.json();
+}
+
+export async function acceptShare(shareId: string): Promise<void> {
+  await shareAction(shareId, 'accept');
+}
+
+export async function declineShare(shareId: string): Promise<void> {
+  await shareAction(shareId, 'decline');
+}
+
+export async function revokeShare(shareId: string): Promise<void> {
+  const res = await apiFetch(`/api/shares/${encodeURIComponent(shareId)}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error(`Revoke failed (${res.status})`);
+}
+
+async function shareAction(shareId: string, action: 'accept' | 'decline'): Promise<void> {
+  const res = await apiFetch(`/api/shares/${encodeURIComponent(shareId)}/${action}`, { method: 'POST' });
+  if (!res.ok) throw new Error(`${action === 'accept' ? 'Accept' : 'Decline'} failed (${res.status})`);
+}
+
+/** HEAD metadata for a path — also works for files shared with you. */
+export async function fileMeta(path: string): Promise<FileSummary> {
+  const res = await apiFetch(`/api/files/${path.split('/').map(encodeURIComponent).join('/')}`, {
+    method: 'HEAD',
+  });
+  if (!res.ok) throw new Error(`Not available (${res.status})`);
+  return {
+    path,
+    sizeBytes: Number(res.headers.get('Content-Length') ?? 0),
+    versionCount: Number(res.headers.get('X-Version') ?? 1),
+    lastModified: res.headers.get('Last-Modified') ?? '',
+  };
 }

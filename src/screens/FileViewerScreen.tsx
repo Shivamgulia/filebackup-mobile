@@ -30,10 +30,12 @@ export async function downloadToCache(item: FileSummary): Promise<string> {
 }
 
 /** In-app viewer with our own back button (the platform preview() can't be customized). */
-export function FileViewerScreen({ item, onBack, onDeleted }: {
+export function FileViewerScreen({ item, onBack, onDeleted, readOnly = false }: {
   item: FileSummary;
   onBack: () => void;
   onDeleted?: () => void;
+  /** Shared files: no delete, no re-upload. */
+  readOnly?: boolean;
 }) {
   const [uri, setUri] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -69,9 +71,13 @@ export function FileViewerScreen({ item, onBack, onDeleted }: {
         <Text style={styles.name} numberOfLines={1}>
           {item.path.split('/').pop()}
         </Text>
-        <TouchableOpacity onPress={confirmDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={[styles.topAction, styles.delete]}>Delete</Text>
-        </TouchableOpacity>
+        {readOnly ? (
+          <View style={styles.spacer} />
+        ) : (
+          <TouchableOpacity onPress={confirmDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={[styles.topAction, styles.delete]}>Delete</Text>
+          </TouchableOpacity>
+        )}
       </View>
       <View style={styles.content}>
         {error !== '' ? (
@@ -98,6 +104,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   topAction: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  spacer: { width: 48 },
   delete: { color: colors.danger },
   name: { color: '#fff', flex: 1, textAlign: 'center' },
   content: { flex: 1, justifyContent: 'center' },

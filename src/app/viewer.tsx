@@ -4,11 +4,12 @@ import type { FileSummary } from '../api';
 
 /** Viewer route: params mirror FileSummary (strings on the wire, numbers here). */
 export default function Viewer() {
-  const { path, sizeBytes, versionCount, lastModified } = useLocalSearchParams<{
+  const { path, sizeBytes, versionCount, lastModified, readOnly } = useLocalSearchParams<{
     path: string;
     sizeBytes: string;
     versionCount: string;
     lastModified: string;
+    readOnly?: string;
   }>();
 
   if (typeof path !== 'string' || path === '') {
@@ -27,6 +28,7 @@ export default function Viewer() {
   return (
     <FileViewerScreen
       item={item}
+      readOnly={readOnly === '1'}
       onBack={() => router.back()}
       onDeleted={() => router.back()}
     />

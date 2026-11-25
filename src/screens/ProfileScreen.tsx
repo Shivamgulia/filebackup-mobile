@@ -75,7 +75,14 @@ export function ProfileScreen() {
               <Text style={styles.chevron}>›</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={[styles.row, me.admin && styles.divider]} onPress={resetIndex} hitSlop={{ top: 8, bottom: 8 }}>
+          <TouchableOpacity
+            style={[styles.row, me.admin && styles.divider]}
+            onPress={() => router.push('/shared')}
+            hitSlop={{ top: 8, bottom: 8 }}>
+            <Text style={styles.rowLabel}>Sharing</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.row, styles.divider]} onPress={resetIndex} hitSlop={{ top: 8, bottom: 8 }}>
             <Text style={[styles.rowLabel, styles.dangerText]}>Reset local index</Text>
           </TouchableOpacity>
           <TouchableOpacity

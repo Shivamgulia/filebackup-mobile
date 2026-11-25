@@ -112,28 +112,29 @@ export function FileListScreen() {
     Alert.alert('Sort by', undefined, buttons);
   }
 
-  function deleteSelected() {
-    if (selected.size === 0) return;
-    Alert.alert(
-      'Delete ' + selected.size + ' item' + (selected.size === 1 ? '' : 's') + '?',
-      'This will remove the selected files from the server (your phone library is untouched).',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            const paths = Array.from(selected);
-            setAll(l => l?.filter(f => !paths.includes(f.path)) ?? null);
-            setSelected(new Set());
-            setSelectMode(false);
-          },
+  function showActions(item: FileSummary) {
+    Alert.alert(item.path.split('/').pop() ?? item.path, undefined, [
+      { text: 'Share', onPress: () => share([item.path]) },
+      {
+        text: 'Select',
+        onPress: () => {
+          setSelectMode(true);
+          setSelected(new Set([item.path]));
         },
-      ],
-    );
+      },
+      { text: 'Delete', style: 'destructive', onPress: () => confirmDelete(item) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   }
 
-
+  /** One share form for the whole selection; it creates a pending share per path. */
+  function share(paths: string[]) {
+    router.push({
+      pathname: '/share',
+      params: paths.length === 1 ? { path: paths[0] } : { paths: JSON.stringify(paths) },
+    });
+    exitSelect();
+  }
 
   function toggleSelect(itemPath: string) {
     setSelected(s => {
@@ -141,8 +142,38 @@ export function FileListScreen() {
       if (s.has(itemPath)) ns.delete(itemPath); else ns.add(itemPath);
       return ns;
     });
-    setSelectMode(selected.size > 0 || isSelectMode); // enter mode when first item toggled
-  }  if (error !== '') {
+  }
+
+  function exitSelect() {
+    setSelected(new Set());
+    setSelectMode(false);
+  }
+
+  function deleteSelected() {
+    if (selected.size === 0) return;
+    const paths = Array.from(selected);
+    Alert.alert(
+      `Delete ${paths.length} item${paths.length === 1 ? '' : 's'}?`,
+      'This will remove the selected files from the server (your phone library is untouched).',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Promise.all(paths.map(p => deleteFile(p)))
+              .then(() => {
+                setAll(l => l?.filter(f => !paths.includes(f.path)) ?? null);
+                exitSelect();
+              })
+              .catch(e => setError(e instanceof Error ? e.message : String(e)));
+          },
+        },
+      ],
+    );
+  }
+
+  if (error !== '') {
     return (
       <SafeAreaView style={[styles.screen, styles.centered]}>
         <Text style={styles.error}>{error}</Text>
@@ -213,7 +244,9 @@ export function FileListScreen() {
           <Pressable
             style={styles.row}
             onPress={() => {
-              if (!isSelectMode) {
+              if (isSelectMode) {
+                toggleSelect(item.path);
+              } else {
                 router.push({
                   pathname: '/viewer',
                   params: {
@@ -223,16 +256,25 @@ export function FileListScreen() {
                     lastModified: String(item.lastModified),
                   },
                 });
-              } else {
-                toggleSelect(item.path);
               }
             }}
-            onLongPress={() => confirmDelete(item)}>
-            <Text style={styles.path} numberOfLines={1}>\n              {selected.has(item.path) ? '✓ ' : ''}{item.path}\n            </Text>
-            <Text style={styles.meta}>
-              {mb(item.sizeBytes)} · v{item.versionCount} ·{' '}
-              {new Date(item.lastModified).toLocaleString()}
-            </Text>
+            onLongPress={() => (isSelectMode ? toggleSelect(item.path) : showActions(item))}>
+            <View style={styles.rowMain}>
+              {isSelectMode && (
+                <View style={[styles.checkbox, selected.has(item.path) && styles.checkboxOn]}>
+                  {selected.has(item.path) && <Text style={styles.checkmark}>✓</Text>}
+                </View>
+              )}
+              <View style={styles.rowText}>
+                <Text style={styles.path} numberOfLines={1}>
+                  {item.path}
+                </Text>
+                <Text style={styles.meta}>
+                  {mb(item.sizeBytes)} · v{item.versionCount} ·{' '}
+                  {new Date(item.lastModified).toLocaleString()}
+                </Text>
+              </View>
+            </View>
           </Pressable>
         )}
         ListEmptyComponent={
@@ -246,6 +288,38 @@ export function FileListScreen() {
             : undefined
         }
       />
+
+      {isSelectMode && (
+        <View style={styles.selectBar}>
+          <TouchableOpacity onPress={exitSelect} hitSlop={{ top: 8, bottom: 8 }}>
+            <Text style={styles.barAction}>Cancel</Text>
+          </TouchableOpacity>
+          <Text style={styles.barCount}>{selected.size} selected</Text>
+          <View style={styles.barActions}>
+            <TouchableOpacity
+              disabled={selected.size === 0}
+              onPress={() => share(Array.from(selected))}
+              hitSlop={{ top: 8, bottom: 8 }}>
+              <Text style={[styles.barAction, selected.size === 0 && styles.barDisabled]}>
+                Share ({selected.size})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              disabled={selected.size === 0}
+              onPress={deleteSelected}
+              hitSlop={{ top: 8, bottom: 8 }}>
+              <Text
+                style={[
+                  styles.barAction,
+                  styles.barDanger,
+                  selected.size === 0 && styles.barDisabled,
+                ]}>
+                Delete ({selected.size})
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -298,6 +372,35 @@ const styles = StyleSheet.create({
   },
   path: { fontSize: 14, color: colors.fg, fontWeight: '500' },
   meta: { fontSize: 12, color: colors.muted },
+  rowMain: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  rowText: { flex: 1, gap: 2 },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1.5,
+    borderColor: colors.faint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
+  checkmark: { color: colors.onPrimary, fontSize: 13, fontWeight: '700' },
+  selectBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+  },
+  barAction: { color: colors.primary, fontSize: 16, fontWeight: '600' },
+  barDanger: { color: colors.danger },
+  barDisabled: { opacity: 0.4 },
+  barCount: { ...type.sub, flex: 1, textAlign: 'center' },
+  barActions: { flexDirection: 'row', gap: spacing.md },
   empty: { textAlign: 'center', marginTop: spacing.xl },
   footer: { marginVertical: spacing.md },
   error: { color: colors.danger, textAlign: 'center' },
