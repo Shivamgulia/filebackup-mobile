@@ -5,10 +5,9 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import {
   acceptShare,
@@ -19,10 +18,14 @@ import {
   revokeShare,
   type Share,
 } from '../api';
-import { colors, radius, spacing, type } from '../theme';
+import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { colors, spacing, type } from '../theme';
 
 /** Incoming shares (accept/decline/open) and outgoing shares (revoke). */
 export function SharedWithMeScreen() {
+  const insets = useSafeAreaInsets();
   const [incoming, setIncoming] = useState<Share[] | null>(null);
   const [outgoing, setOutgoing] = useState<Share[] | null>(null);
   const [error, setError] = useState('');
@@ -117,22 +120,16 @@ export function SharedWithMeScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.back}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Sharing</Text>
-        <View style={styles.back} />
-      </View>
+      <ScreenHeader title="Sharing" />
 
       {error !== '' && <Text style={styles.error}>{error}</Text>}
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}>
         <Text style={type.caption}>SHARED WITH ME</Text>
-        {incoming.length === 0 && <Text style={styles.empty}>Nothing shared with you</Text>}
+        {incoming.length === 0 && <EmptyState text="Nothing shared with you" />}
 
         {pending.map(share => (
-          <View key={share.shareId} style={styles.row}>
+          <Card key={share.shareId} style={styles.row}>
             <Text style={styles.rowTitle} numberOfLines={1}>
               {name(share.resourcePath)}
             </Text>
@@ -151,28 +148,27 @@ export function SharedWithMeScreen() {
                 <Text style={styles.decline}>Decline</Text>
               </Pressable>
             </View>
-          </View>
+          </Card>
         ))}
 
         {accepted.map(share => (
-          <Pressable
+          <Card
             key={share.shareId}
             style={styles.row}
-            disabled={busyId === share.shareId}
-            onPress={() => open(share)}>
+            onPress={() => (busyId === share.shareId ? undefined : open(share))}>
             <Text style={styles.rowTitle} numberOfLines={1}>
               {name(share.resourcePath)}
             </Text>
             <Text style={styles.rowMeta}>{meta(share)}</Text>
             {busyId === share.shareId && <ActivityIndicator style={styles.rowSpinner} color={colors.secondary} />}
-          </Pressable>
+          </Card>
         ))}
 
         <Text style={[type.caption, styles.sectionGap]}>SHARED BY ME</Text>
-        {outgoing.length === 0 && <Text style={styles.empty}>Nothing shared yet</Text>}
+        {outgoing.length === 0 && <EmptyState text="Nothing shared yet" />}
 
         {outgoing.map(share => (
-          <View key={share.shareId} style={styles.row}>
+          <Card key={share.shareId} style={styles.row}>
             <Text style={styles.rowTitle} numberOfLines={1}>
               {name(share.resourcePath)}
             </Text>
@@ -185,7 +181,7 @@ export function SharedWithMeScreen() {
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={styles.decline}>Revoke</Text>
             </Pressable>
-          </View>
+          </Card>
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -208,30 +204,14 @@ function expiry(share: Share): string {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   centered: { justifyContent: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  back: { color: colors.primary, fontSize: 17, fontWeight: '600', width: 64 },
-  title: { flex: 1, textAlign: 'center', ...type.headline },
-  content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.sm },
+  content: { padding: spacing.lg, gap: spacing.sm },
   sectionGap: { marginTop: spacing.xl },
-  row: {
-    backgroundColor: colors.card,
-    borderRadius: radius.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    gap: 4,
-  },
+  row: { padding: spacing.lg, gap: spacing.xs },
   rowTitle: { ...type.headline },
-  rowMeta: { ...type.sub, fontSize: 13 },
+  rowMeta: type.meta,
   rowSpinner: { alignSelf: 'flex-end' },
   actions: { flexDirection: 'row', gap: spacing.lg, marginTop: spacing.xs },
   accept: { color: colors.primary, fontSize: 16, fontWeight: '600' },
   decline: { color: colors.danger, fontSize: 16, fontWeight: '600' },
-  empty: { ...type.sub, paddingVertical: spacing.sm },
-  error: { color: colors.danger, textAlign: 'center', paddingHorizontal: spacing.lg },
+  error: { ...type.sub, color: colors.danger, textAlign: 'center', paddingHorizontal: spacing.lg },
 });

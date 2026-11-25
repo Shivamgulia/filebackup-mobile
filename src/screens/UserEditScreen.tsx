@@ -5,17 +5,20 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
-  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 import { changePassword, listUsers, setSuspended, setUserRole, type AdminUser } from '../api';
-import { colors, radius, spacing, type } from '../theme';
+import { Card } from '../components/Card';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { TextField } from '../components/TextField';
+import { colors, layout, spacing, type } from '../theme';
 
 /** J6 — edit one user: access level, suspension, password. */
 export function UserEditScreen() {
+  const insets = useSafeAreaInsets();
   const { username } = useLocalSearchParams<{ username: string }>();
   const [user, setUser] = useState<AdminUser | null>(null);
   const [error, setError] = useState('');
@@ -77,19 +80,14 @@ export function UserEditScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Text style={styles.back}>‹ Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.screenTitle} numberOfLines={1}>{user.username}</Text>
-          <View style={{ width: 64 }} />
-        </View>
-
+      <ScreenHeader title={user.username} />
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}
+        keyboardShouldPersistTaps="handled">
         {error !== '' && <Text style={styles.error}>{error}</Text>}
         {status !== '' && <Text style={styles.status}>{status}</Text>}
 
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <Text style={styles.sectionTitle}>Access level</Text>
           <TouchableOpacity style={styles.row} onPress={() => pickRole(user)} hitSlop={{ top: 8, bottom: 8 }}>
             <Text style={styles.rowLabel}>
@@ -117,29 +115,27 @@ export function UserEditScreen() {
               Configured admins cannot be suspended from the app.
             </Text>
           )}
-        </View>
+        </Card>
 
-        <View style={styles.card}>
+        <Card style={styles.card}>
           <Text style={styles.sectionTitle}>Change password</Text>
-          <TextInput
-            style={styles.input}
+          <TextField
             placeholder="New password (min 8 characters)"
-            placeholderTextColor={colors.faint}
             secureTextEntry
             value={pw}
             onChangeText={setPw}
           />
-          <TouchableOpacity
-            style={[styles.primaryButton, (busy || pw.length < 8) && styles.disabled]}
-            disabled={busy || pw.length < 8}
+          <PrimaryButton
+            title="Save password"
+            loading={busy}
+            disabled={pw.length < 8}
             onPress={() => {
               const target = user.username;
               setPw('');
               run(() => changePassword(target, pw), 'Password changed').catch(() => {});
-            }}>
-            <Text style={styles.primaryButtonText}>Save password</Text>
-          </TouchableOpacity>
-        </View>
+            }}
+          />
+        </Card>
 
         {busy && <ActivityIndicator style={styles.spinner} color={colors.secondary} />}
       </ScrollView>
@@ -151,52 +147,19 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md },
   content: { paddingBottom: spacing.xxl, gap: spacing.md },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  back: { color: colors.primary, fontSize: 17, fontWeight: '600', width: 64 },
-  screenTitle: { flex: 1, textAlign: 'center', ...type.headline },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    marginHorizontal: spacing.lg,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
+  card: { marginHorizontal: spacing.lg, gap: spacing.md },
   sectionTitle: { ...type.caption, textTransform: 'uppercase' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 44,
+    minHeight: layout.row,
   },
-  rowLabel: { ...type.headline },
+  rowLabel: { ...type.headline, flexShrink: 1 },
   chevron: { color: colors.faint, fontSize: 22, fontWeight: '600' },
   goText: { color: colors.success },
   dangerText: { color: colors.danger },
-  input: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: radius.control,
-    padding: 12,
-    fontSize: 17,
-    color: colors.fg,
-    backgroundColor: colors.card,
-  },
-  primaryButton: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.control,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  primaryButtonText: { color: colors.onPrimary, fontSize: 15, fontWeight: '600' },
-  disabled: { opacity: 0.4 },
   spinner: { marginTop: spacing.sm },
-  error: { color: colors.danger, fontSize: 15, marginHorizontal: spacing.lg },
-  status: { color: colors.success, fontSize: 15, marginHorizontal: spacing.lg },
+  error: { ...type.sub, color: colors.danger, marginHorizontal: spacing.lg },
+  status: { ...type.sub, color: colors.success, marginHorizontal: spacing.lg },
 });

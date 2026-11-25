@@ -4,7 +4,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { File, Paths } from 'expo-file-system';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authHeaders, deleteFile, getServerUrl, type FileSummary } from '../api';
-import { colors } from '../theme';
+import { colors, layout, spacing, type } from '../theme';
 
 const VIDEO_RE = /\.(mov|mp4|m4v|avi|webm|mkv)$/i;
 
@@ -97,17 +97,19 @@ export function FileViewerScreen({ item, onBack, onDeleted, readOnly = false }: 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#000' },
   topbar: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    minHeight: layout.control,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing.md,
   },
-  topAction: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  spacer: { width: 48 },
+  topAction: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  // Matches the Delete label's width so the filename stays centered when read-only.
+  spacer: { width: 44 },
   delete: { color: colors.danger },
-  name: { color: '#fff', flex: 1, textAlign: 'center' },
+  name: { ...type.headline, color: '#fff', flex: 1, textAlign: 'center' },
   content: { flex: 1, justifyContent: 'center' },
   media: { flex: 1 },
-  error: { color: colors.danger, textAlign: 'center', padding: 24 },
+  error: { ...type.sub, color: colors.danger, textAlign: 'center', padding: spacing.xl },
 });

@@ -8,14 +8,18 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as api from '../api';
 import * as db from '../db';
-import { colors, radius, spacing, type } from '../theme';
+import { Badge } from '../components/Badge';
+import { Card } from '../components/Card';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { colors, layout, radius, spacing, type } from '../theme';
 
 /** J4 — account: iOS-Settings-style identity card + account rows. */
 export function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const [me, setMe] = useState<{ username: string; admin: boolean } | null>(null);
   const [server] = useState(() => api.getServerUrl());
 
@@ -50,25 +54,18 @@ export function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Text style={styles.back}>‹ Back</Text>
-          </TouchableOpacity>
-        </View>
-
+      <ScreenHeader title="Profile" />
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}>
         <View style={styles.identity}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>{me.username[0].toUpperCase()}</Text>
           </View>
           <Text style={type.title}>{me.username}</Text>
-          <Text style={[styles.badge, me.admin ? styles.badgeAdmin : styles.badgeUser]}>
-            {me.admin ? 'Admin' : 'User'}
-          </Text>
+          <Badge label={me.admin ? 'Admin' : 'User'} variant={me.admin ? 'admin' : 'user'} />
           <Text style={type.sub}>Server {server}</Text>
         </View>
 
-        <View style={styles.card}>
+        <Card style={styles.card}>
           {me.admin && (
             <TouchableOpacity style={styles.row} onPress={() => router.push('/users')} hitSlop={{ top: 8, bottom: 8 }}>
               <Text style={styles.rowLabel}>User management</Text>
@@ -91,7 +88,7 @@ export function ProfileScreen() {
             onPress={() => api.logout().then(() => router.replace('/login'))}>
             <Text style={[styles.rowLabel, styles.dangerText]}>Sign out</Text>
           </TouchableOpacity>
-        </View>
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
@@ -101,44 +98,23 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   centered: { justifyContent: 'center' },
   content: { paddingBottom: spacing.xxl },
-  header: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
-  back: { color: colors.primary, fontSize: 17, fontWeight: '600' },
   identity: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xl },
   avatar: {
     width: 88,
     height: 88,
-    borderRadius: 44,
+    borderRadius: radius.full,
     backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xs,
   },
   avatarText: { color: colors.primary, fontSize: 40, fontWeight: '600' },
-  badge: {
-    fontSize: 12,
-    fontWeight: '600',
-    paddingVertical: 3,
-    paddingHorizontal: 10,
-    borderRadius: 99,
-    overflow: 'hidden',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  badgeAdmin: { color: colors.primary, backgroundColor: colors.primarySoft },
-  badgeUser: { color: colors.muted, backgroundColor: colors.bg },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    marginHorizontal: spacing.lg,
-    paddingHorizontal: spacing.lg,
-  },
+  card: { marginHorizontal: spacing.lg, paddingVertical: 0, paddingHorizontal: spacing.lg },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 52,
+    minHeight: layout.row,
   },
   divider: {
     borderTopWidth: StyleSheet.hairlineWidth,

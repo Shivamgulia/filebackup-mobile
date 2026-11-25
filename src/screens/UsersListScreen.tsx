@@ -7,13 +7,18 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { listUsers, type AdminUser } from '../api';
-import { colors, radius, spacing, type } from '../theme';
+import { Badge } from '../components/Badge';
+import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { colors, spacing, type } from '../theme';
 
 /** J5 — who has access: plain list of users; tap for details. */
 export function UsersListScreen() {
+  const insets = useSafeAreaInsets();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [error, setError] = useState('');
 
@@ -29,15 +34,14 @@ export function UsersListScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.back}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.screenTitle}>Users</Text>
-        <TouchableOpacity onPress={() => router.push('/users/new')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.add}>＋ New</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title="Users"
+        right={
+          <TouchableOpacity onPress={() => router.push('/users/new')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.add}>＋ New</Text>
+          </TouchableOpacity>
+        }
+      />
       {error !== '' ? (
         <View style={styles.centered}>
           <Text style={styles.error}>{error}</Text>
@@ -48,27 +52,22 @@ export function UsersListScreen() {
         </View>
       ) : (
         <FlatList
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: spacing.xl + insets.bottom }]}
           data={users}
           keyExtractor={u => u.username}
           renderItem={({ item }) => (
-            <TouchableOpacity
+            <Card
               style={styles.rowCard}
               onPress={() => router.push(`/users/${item.username}`)}>
               <Text style={styles.name} numberOfLines={1}>{item.username}</Text>
               <View style={styles.right}>
-                <Text
-                  style={[styles.badge, item.role === 'admin' ? styles.badgeAdmin : styles.badgeUser]}>
-                  {item.role === 'admin' ? 'Admin' : 'User'}
-                </Text>
-                {item.suspended && <Text style={[styles.badge, styles.badgeSuspended]}>Suspended</Text>}
+                <Badge label={item.role === 'admin' ? 'Admin' : 'User'} variant={item.role === 'admin' ? 'admin' : 'user'} />
+                {item.suspended && <Badge label="Suspended" variant="suspended" />}
                 <Text style={styles.chevron}>›</Text>
               </View>
-            </TouchableOpacity>
+            </Card>
           )}
-          ListEmptyComponent={
-            <Text style={[styles.name, styles.empty]}>No users yet</Text>
-          }
+          ListEmptyComponent={<EmptyState text="No users yet" />}
         />
       )}
     </SafeAreaView>
@@ -77,45 +76,17 @@ export function UsersListScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  back: { color: colors.primary, fontSize: 17, fontWeight: '600', width: 72 },
-  screenTitle: { flex: 1, textAlign: 'center', ...type.headline },
-  add: { color: colors.primary, fontSize: 17, fontWeight: '600', width: 72, textAlign: 'right' },
+  add: { color: colors.primary, fontSize: 17, fontWeight: '600' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.md },
-  listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl, gap: spacing.sm },
+  listContent: { paddingHorizontal: spacing.lg, gap: spacing.sm },
   rowCard: {
-    backgroundColor: colors.card,
-    borderRadius: radius.control,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 52,
+    paddingVertical: spacing.md,
   },
   name: { ...type.headline, flexShrink: 1 },
   right: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  badge: {
-    fontSize: 12,
-    fontWeight: '600',
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    borderRadius: 99,
-    overflow: 'hidden',
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-  },
-  badgeAdmin: { color: colors.primary, backgroundColor: colors.primarySoft },
-  badgeUser: { color: colors.muted, backgroundColor: colors.bg },
-  badgeSuspended: { color: colors.onWarning, backgroundColor: colors.warning },
   chevron: { color: colors.faint, fontSize: 22, fontWeight: '600' },
-  empty: { textAlign: 'center', marginTop: spacing.xxl, color: colors.muted },
   error: { color: colors.danger, textAlign: 'center' },
 });

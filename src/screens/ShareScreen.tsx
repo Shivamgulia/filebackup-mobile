@@ -1,19 +1,21 @@
 import { useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { createShare } from '../api';
+import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { TextField } from '../components/TextField';
 import { colors, radius, spacing, type } from '../theme';
 
 const EXPIRIES = [
@@ -25,6 +27,7 @@ const EXPIRIES = [
 
 /** Share one file (`path`) or a multi-select (`paths`, a JSON array string). */
 export function ShareScreen() {
+  const insets = useSafeAreaInsets();
   const { path, paths } = useLocalSearchParams<{ path?: string; paths?: string }>();
   const targets = useMemo(() => parseTargets(path, paths), [path, paths]);
   const [recipient, setRecipient] = useState('');
@@ -66,33 +69,27 @@ export function ShareScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.back}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Share</Text>
-        <View style={styles.back} />
-      </View>
+      <ScreenHeader title="Share" />
 
       {targets.length === 0 ? (
-        <Text style={[styles.error, styles.empty]}>Nothing to share</Text>
+        <EmptyState text="Nothing to share" />
       ) : (
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.card}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}
+          keyboardShouldPersistTaps="handled">
+          <Card style={styles.card}>
             <Text style={type.caption}>WHAT</Text>
             {sharePaths.map(p => (
               <Text key={p} style={styles.path} numberOfLines={1}>
                 {p}
               </Text>
             ))}
-          </View>
+          </Card>
 
-          <View style={styles.card}>
+          <Card style={styles.card}>
             <Text style={type.caption}>SHARE WITH</Text>
-            <TextInput
-              style={styles.input}
+            <TextField
               placeholder="Username"
-              placeholderTextColor={colors.faint}
               autoCapitalize="none"
               autoCorrect={false}
               value={recipient}
@@ -101,9 +98,9 @@ export function ShareScreen() {
                 setError('');
               }}
             />
-          </View>
+          </Card>
 
-          <View style={styles.card}>
+          <Card style={styles.card}>
             <Text style={type.caption}>PERMISSION</Text>
             <View style={styles.segments}>
               <Pressable
@@ -119,9 +116,9 @@ export function ShareScreen() {
                 </Text>
               </Pressable>
             </View>
-          </View>
+          </Card>
 
-          <View style={styles.card}>
+          <Card style={styles.card}>
             <Text style={type.caption}>EXPIRES</Text>
             <View style={styles.segments}>
               {EXPIRIES.map(option => (
@@ -135,23 +132,21 @@ export function ShareScreen() {
                 </Pressable>
               ))}
             </View>
-          </View>
+          </Card>
 
           {single && (
-            <View style={[styles.card, styles.switchRow]}>
+            <Card style={[styles.card, styles.switchRow]}>
               <View style={styles.switchText}>
                 <Text style={type.headline}>Share the whole folder</Text>
                 <Text style={styles.hint}>{parentOf(targets[0])}</Text>
               </View>
               <Switch value={wholeFolder} onValueChange={setWholeFolder} />
-            </View>
+            </Card>
           )}
 
           {error !== '' && <Text style={styles.error}>{error}</Text>}
 
-          <TouchableOpacity style={[styles.cta, busy && styles.disabled]} disabled={busy} onPress={submit}>
-            {busy ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.ctaText}>Create share</Text>}
-          </TouchableOpacity>
+          <PrimaryButton title="Create share" loading={busy} onPress={submit} style={styles.cta} />
         </ScrollView>
       )}
     </SafeAreaView>
@@ -178,54 +173,25 @@ function parentOf(path: string): string {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  back: { color: colors.primary, fontSize: 17, fontWeight: '600', width: 64 },
-  title: { flex: 1, textAlign: 'center', ...type.headline },
-  content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.md },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    gap: spacing.sm,
-  },
+  content: { padding: spacing.lg, gap: spacing.md },
+  card: { gap: spacing.sm },
   path: { ...type.body, fontSize: 15 },
-  input: {
-    backgroundColor: colors.bg,
-    borderRadius: radius.control,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 17,
-    color: colors.fg,
-  },
   segments: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   segment: {
+    minHeight: 44,
     paddingVertical: 8,
     paddingHorizontal: 14,
+    justifyContent: 'center',
     borderRadius: radius.control,
-    backgroundColor: colors.bg,
+    borderCurve: 'continuous',
+    backgroundColor: colors.fill,
   },
   segmentActive: { backgroundColor: colors.primarySoft },
   segmentText: { fontSize: 15, color: colors.muted, fontWeight: '600' },
   segmentTextActive: { color: colors.primary },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  switchText: { flex: 1, gap: 2 },
-  hint: { fontSize: 13, color: colors.muted },
-  cta: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.control,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  ctaText: { color: colors.onPrimary, fontSize: 17, fontWeight: '600' },
-  disabled: { opacity: 0.5 },
-  error: { color: colors.danger, textAlign: 'center' },
-  empty: { marginTop: spacing.xxl },
+  switchText: { flex: 1, gap: spacing.xs },
+  hint: type.meta,
+  cta: { marginTop: spacing.sm },
+  error: { ...type.sub, color: colors.danger, textAlign: 'center' },
 });

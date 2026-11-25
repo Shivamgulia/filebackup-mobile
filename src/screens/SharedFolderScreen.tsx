@@ -1,15 +1,11 @@
 import { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect, useLocalSearchParams, router } from 'expo-router';
 import { listFilesAt, type FileSummary } from '../api';
+import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { colors, spacing, type } from '../theme';
 
 const mb = (bytes: number) =>
@@ -19,6 +15,7 @@ const mb = (bytes: number) =>
 
 /** Read-only listing of a folder another user shared (path is the folder, not a file). */
 export function SharedFolderScreen() {
+  const insets = useSafeAreaInsets();
   const { path, owner } = useLocalSearchParams<{ path: string; owner?: string }>();
   const folder = typeof path === 'string' ? path : '';
   const [files, setFiles] = useState<FileSummary[] | null>(null);
@@ -39,15 +36,7 @@ export function SharedFolderScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.back}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>
-          {folder.split('/').pop() ?? 'Shared folder'}
-        </Text>
-        <View style={styles.back} />
-      </View>
+      <ScreenHeader title={folder.split('/').pop() ?? 'Shared folder'} />
 
       {owner !== undefined && <Text style={styles.sub}>Shared by {owner}</Text>}
 
@@ -59,14 +48,12 @@ export function SharedFolderScreen() {
         </View>
       ) : (
         <FlatList
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: spacing.xl + insets.bottom }]}
           data={files}
           keyExtractor={f => f.path}
-          ListEmptyComponent={
-            <Text style={styles.empty}>The owner has no files here any more</Text>
-          }
+          ListEmptyComponent={<EmptyState text="The owner has no files here any more" />}
           renderItem={({ item }) => (
-            <TouchableOpacity
+            <Card
               style={styles.row}
               onPress={() =>
                 router.push({
@@ -86,7 +73,7 @@ export function SharedFolderScreen() {
               <Text style={styles.meta}>
                 {mb(item.sizeBytes)} · {new Date(item.lastModified).toLocaleString()}
               </Text>
-            </TouchableOpacity>
+            </Card>
           )}
         />
       )}
@@ -97,28 +84,10 @@ export function SharedFolderScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   centered: { flex: 1, justifyContent: 'center' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  back: { color: colors.primary, fontSize: 17, fontWeight: '600', width: 64 },
-  title: { flex: 1, textAlign: 'center', ...type.headline },
-  sub: { textAlign: 'center', ...type.sub, paddingBottom: spacing.sm },
-  listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-  row: {
-    backgroundColor: colors.card,
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    gap: 2,
-  },
-  path: { fontSize: 14, color: colors.fg, fontWeight: '500' },
-  meta: { fontSize: 12, color: colors.muted },
-  empty: { ...type.sub, textAlign: 'center', marginTop: spacing.xl },
-  error: { color: colors.danger, textAlign: 'center', padding: spacing.lg },
+  sub: { textAlign: 'center', ...type.meta, paddingBottom: spacing.sm },
+  listContent: { paddingHorizontal: spacing.lg, gap: spacing.sm },
+  row: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg, gap: spacing.xs },
+  path: { ...type.body, fontSize: 15, fontWeight: '500' },
+  meta: type.meta,
+  error: { ...type.sub, color: colors.danger, textAlign: 'center', padding: spacing.lg },
 });

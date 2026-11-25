@@ -4,7 +4,6 @@ import {
   Alert,
   type AlertButton,
   FlatList,
-  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -12,10 +11,13 @@ import {
   View,
   type TextInputInstance,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { deleteFile, listFiles, type FileSummary } from '../api';
-import { colors, spacing, type } from '../theme';
+import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { colors, radius, spacing, type } from '../theme';
 
 const PAGE_SIZE = 20;
 
@@ -35,6 +37,7 @@ const SORTS = [
 /** Browse + search + sort view of everything backed up from this phone. */
 export function FileListScreen() {
   const { search } = useLocalSearchParams<{ search?: string }>();
+  const insets = useSafeAreaInsets();
   const [all, setAll] = useState<FileSummary[] | null>(null);
   const [visible, setVisible] = useState(PAGE_SIZE);
   const [error, setError] = useState('');
@@ -193,17 +196,25 @@ export function FileListScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.backLink}>‹ Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.screenTitle} numberOfLines={1}>
-          Photos & Videos
-        </Text>
-        <TouchableOpacity onPress={pickSort} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.sort}>Sort</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        title="Photos & Videos"
+        right={
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              onPress={isSelectMode ? exitSelect : () => setSelectMode(true)}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.select}>{isSelectMode ? 'Done' : 'Select'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={pickSort}
+              accessibilityRole="button"
+              accessibilityLabel="Sort"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.sortIcon}>⇅</Text>
+            </TouchableOpacity>
+          </View>
+        }
+      />
 
       <View style={styles.searchRow}>
         <TextInput
@@ -234,14 +245,14 @@ export function FileListScreen() {
       </View>
 
       <FlatList
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingBottom: spacing.xl + insets.bottom }]}
         data={shown.slice(0, visible)}
         keyExtractor={f => f.path}
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         keyboardShouldPersistTaps="handled"
         renderItem={({ item }) => (
-          <Pressable
+          <Card
             style={styles.row}
             onPress={() => {
               if (isSelectMode) {
@@ -275,12 +286,10 @@ export function FileListScreen() {
                 </Text>
               </View>
             </View>
-          </Pressable>
+          </Card>
         )}
         ListEmptyComponent={
-          query !== ''
-            ? <Text style={[styles.meta, styles.empty]}>{`No matches for "${query.trim()}"`}</Text>
-            : <Text style={[styles.meta, styles.empty]}>Nothing backed up yet</Text>
+          <EmptyState text={query !== '' ? `No matches for "${query.trim()}"` : 'Nothing backed up yet'} />
         }
         ListFooterComponent={
           visible < shown.length
@@ -290,7 +299,7 @@ export function FileListScreen() {
       />
 
       {isSelectMode && (
-        <View style={styles.selectBar}>
+        <View style={[styles.selectBar, { paddingBottom: spacing.md + insets.bottom }]}>
           <TouchableOpacity onPress={exitSelect} hitSlop={{ top: 8, bottom: 8 }}>
             <Text style={styles.barAction}>Cancel</Text>
           </TouchableOpacity>
@@ -327,21 +336,10 @@ export function FileListScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   centered: { justifyContent: 'center', alignItems: 'center', gap: spacing.md },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  backLink: { color: colors.primary, fontSize: 16, fontWeight: '600', width: 64 },
-  screenTitle: { flex: 1, textAlign: 'center', ...type.headline },
-  sort: {
-    width: 64,
-    textAlign: 'right',
-    color: colors.primary,
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  backLink: { color: colors.primary, fontSize: 17, fontWeight: '600' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  select: { color: colors.primary, fontSize: 17, fontWeight: '600' },
+  sortIcon: { color: colors.primary, fontSize: 20, fontWeight: '600' },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -351,33 +349,25 @@ const styles = StyleSheet.create({
   },
   searchField: {
     flex: 1,
-    backgroundColor: '#E9E9EB', // Apple search-bar gray
-    borderRadius: 10,
+    backgroundColor: colors.fill,
+    borderRadius: radius.control,
+    borderCurve: 'continuous',
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontSize: 17,
     color: colors.fg,
   },
   cancel: { color: colors.primary, fontSize: 17 },
-  listContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-  row: {
-    backgroundColor: colors.card,
-    borderRadius: 10,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    gap: 2,
-  },
-  path: { fontSize: 14, color: colors.fg, fontWeight: '500' },
-  meta: { fontSize: 12, color: colors.muted },
+  listContent: { paddingHorizontal: spacing.lg, gap: spacing.sm },
+  row: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+  path: { ...type.body, fontSize: 15, fontWeight: '500' },
+  meta: type.meta,
   rowMain: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  rowText: { flex: 1, gap: 2 },
+  rowText: { flex: 1, gap: spacing.xs },
   checkbox: {
     width: 22,
     height: 22,
-    borderRadius: 11,
+    borderRadius: radius.full,
     borderWidth: 1.5,
     borderColor: colors.faint,
     alignItems: 'center',
@@ -391,17 +381,18 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
+    borderTopLeftRadius: radius.card,
+    borderTopRightRadius: radius.card,
+    borderCurve: 'continuous',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     backgroundColor: colors.card,
   },
-  barAction: { color: colors.primary, fontSize: 16, fontWeight: '600' },
+  barAction: { color: colors.primary, fontSize: 17, fontWeight: '600' },
   barDanger: { color: colors.danger },
   barDisabled: { opacity: 0.4 },
   barCount: { ...type.sub, flex: 1, textAlign: 'center' },
-  barActions: { flexDirection: 'row', gap: spacing.md },
-  empty: { textAlign: 'center', marginTop: spacing.xl },
+  barActions: { flexDirection: 'row', gap: spacing.lg },
   footer: { marginVertical: spacing.md },
   error: { color: colors.danger, textAlign: 'center' },
 });

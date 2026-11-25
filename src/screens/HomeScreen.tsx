@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,18 +7,21 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import * as api from '../api';
 import { syncAndUpload } from '../sync';
 import { registerSyncTask } from '../background';
 import * as db from '../db';
-import { colors, radius, spacing, type } from '../theme';
+import { Card } from '../components/Card';
+import { PrimaryButton } from '../components/PrimaryButton';
+import { colors, layout, radius, spacing, type } from '../theme';
 
 type SyncStatus = { text: string; color: string; tappable: boolean };
 
 /** Home: one sync-status line answers "is my stuff backed up?", Sync action, Photos & Videos. */
 export function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const [username, setUsername] = useState('');
   const [counts, setCounts] = useState({ total: 0, uploaded: 0, pending: 0, failed: 0 });
   const [lastSync, setLastSync] = useState<string | null>(null);
@@ -74,7 +76,7 @@ export function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}>
         <View style={styles.header}>
           <Text style={type.title}>FileBackup</Text>
           {username !== '' && (
@@ -88,26 +90,24 @@ export function HomeScreen() {
           )}
         </View>
 
-        <View style={styles.card}>
-          <Pressable
-            onPress={status.tappable ? () => router.push('/failed') : undefined}
-            disabled={!status.tappable}>
-            <Text style={[styles.status, { color: status.color }]}>{status.text}</Text>
-          </Pressable>
-          {lastSync && <Text style={type.sub}>Last synced {lastSync}</Text>}
-          <TouchableOpacity
-            style={[styles.primaryButton, busy && styles.disabled]}
-            disabled={busy}
-            onPress={() => runSync()}>
-            {busy ? (
-              <ActivityIndicator color={colors.onPrimary} />
-            ) : (
-              <Text style={styles.primaryButtonText}>Sync now</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+        <Card>
+          <View style={styles.statusGroup}>
+            <Pressable
+              onPress={status.tappable ? () => router.push('/failed') : undefined}
+              disabled={!status.tappable}>
+              <Text style={[styles.status, { color: status.color }]}>{status.text}</Text>
+            </Pressable>
+            {lastSync && <Text style={type.sub}>Last synced {lastSync}</Text>}
+          </View>
+          <PrimaryButton
+            title="Sync now"
+            loading={busy}
+            onPress={() => runSync()}
+            style={styles.syncButton}
+          />
+        </Card>
 
-        <View style={styles.card}>
+        <Card>
           <TouchableOpacity
             style={styles.row}
             onPress={() => router.push('/files')}
@@ -122,7 +122,7 @@ export function HomeScreen() {
             <Text style={styles.rowLabel}>Search</Text>
             <Text style={styles.chevron}>›</Text>
           </TouchableOpacity>
-        </View>
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
@@ -130,7 +130,7 @@ export function HomeScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.lg, paddingBottom: spacing.xxl, gap: spacing.xl },
+  content: { padding: spacing.lg, gap: spacing.xl },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -139,41 +139,24 @@ const styles = StyleSheet.create({
   avatar: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: radius.full,
     backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: { color: colors.primary, fontSize: 20, fontWeight: '600' },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.card,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
+  statusGroup: { gap: spacing.xs },
   status: { fontSize: 17, fontWeight: '600' },
-  primaryButton: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.control,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  primaryButtonText: { color: colors.onPrimary, fontSize: 17, fontWeight: '600' },
-  disabled: { opacity: 0.5 },
+  syncButton: { marginTop: spacing.md },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 44,
+    minHeight: layout.row,
   },
   divider: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
-    marginTop: spacing.xs,
-    paddingTop: spacing.sm,
   },
   rowLabel: { ...type.headline },
   chevron: { color: colors.faint, fontSize: 22, fontWeight: '600' },

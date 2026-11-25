@@ -31,9 +31,13 @@ export const colors = {
   onWarning: '#FFFFFF',
   danger: '#C0392B',
   onDanger: '#FFFFFF',
+  fill: '#E9E9EB', // search fields and segmented controls (iOS fill)
 } as const;
 
-export const radius = { card: 16, control: 10, sm: 8 } as const;
+export const radius = { card: 16, control: 10, sm: 8, full: 9999 } as const;
+
+/** Repeated component heights; values stay 44+ so they remain touch targets. */
+export const layout = { row: 52, control: 48 } as const;
 
 export const spacing = {
   xs: 4,
@@ -49,5 +53,6 @@ export const type = {
   headline: { fontSize: 17, fontWeight: '600', color: colors.fg },
   body: { fontSize: 17, color: colors.fg },
   sub: { fontSize: 15, color: colors.muted },
+  meta: { fontSize: 13, color: colors.muted },
   caption: { fontSize: 12, fontWeight: '600', color: colors.muted, letterSpacing: 0.3 },
 } as const;
