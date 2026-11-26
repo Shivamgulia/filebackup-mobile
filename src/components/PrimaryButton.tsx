@@ -6,7 +6,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { colors, layout, radius, type } from '../theme';
+import { colors, layout, radius, spacing, type } from '../theme';
 
 /** The one primary CTA: full width, 48pt tall, 17pt label. */
 export function PrimaryButton({
@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     minHeight: layout.control,
     paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,5 +1,5 @@
 import { StyleSheet, Text } from 'react-native';
-import { colors, radius, type } from '../theme';
+import { colors, radius, spacing, type } from '../theme';
 
 const variants = {
   admin: { color: colors.primary, backgroundColor: colors.primarySoft },
@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
   badge: {
     ...type.caption,
     paddingVertical: 2,
-    paddingHorizontal: 8,
+    paddingHorizontal: spacing.sm,
     borderRadius: radius.full,
     overflow: 'hidden',
     textTransform: 'uppercase',

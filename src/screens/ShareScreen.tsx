@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   segments: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   segment: {
     minHeight: 44,
-    paddingVertical: 8,
+    paddingVertical: spacing.sm,
     paddingHorizontal: 14,
     justifyContent: 'center',
     borderRadius: radius.control,
