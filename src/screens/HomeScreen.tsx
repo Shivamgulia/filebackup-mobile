@@ -1,21 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { Stack, router, useFocusEffect } from 'expo-router';
 import * as api from '../api';
 import { syncAndUpload } from '../sync';
 import { registerSyncTask } from '../background';
 import * as db from '../db';
 import { Card } from '../components/Card';
+import { Icon } from '../components/Icon';
+import { ListRow } from '../components/ListRow';
+import { ListSection } from '../components/ListSection';
 import { PrimaryButton } from '../components/PrimaryButton';
-import { colors, layout, radius, spacing, type } from '../theme';
+import { colors, radius, spacing, type } from '../theme';
 
 type SyncStatus = { text: string; color: string; tappable: boolean };
 
@@ -26,6 +29,7 @@ export function HomeScreen() {
   const [counts, setCounts] = useState({ total: 0, uploaded: 0, pending: 0, failed: 0 });
   const [lastSync, setLastSync] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const refresh = useCallback(async () => {
     setCounts(await db.getStateCounts());
@@ -47,6 +51,12 @@ export function HomeScreen() {
     },
     [refresh],
   );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refresh();
+    setRefreshing(false);
+  }, [refresh]);
 
   useEffect(() => {
     registerSyncTask();
@@ -75,24 +85,30 @@ export function HomeScreen() {
         : { text: 'All synced ✓', color: colors.primary, tappable: false };
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <ScrollView contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}>
-        <View style={styles.header}>
-          <Text style={type.title}>FileBackup</Text>
-          {username !== '' && (
-            <TouchableOpacity
-              accessibilityLabel="Profile"
-              style={styles.avatar}
-              onPress={() => router.push('/profile')}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.avatarText}>{username[0].toUpperCase()}</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
+    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
+      <Stack.Screen
+        options={{
+          headerRight: () =>
+            username !== '' ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Profile"
+                style={styles.avatar}
+                onPress={() => router.push('/profile')}
+                hitSlop={8}>
+                <Text style={styles.avatarText}>{username[0].toUpperCase()}</Text>
+              </Pressable>
+            ) : undefined,
+        }}
+      />
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}>
         <Card>
           <View style={styles.statusGroup}>
             <Pressable
+              accessibilityRole={status.tappable ? 'button' : undefined}
               onPress={status.tappable ? () => router.push('/failed') : undefined}
               disabled={!status.tappable}>
               <Text style={[styles.status, { color: status.color }]}>{status.text}</Text>
@@ -107,22 +123,19 @@ export function HomeScreen() {
           />
         </Card>
 
-        <Card>
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => router.push('/files')}
-            hitSlop={{ top: 8, bottom: 8 }}>
+        <ListSection>
+          <ListRow onPress={() => router.push('/files')} style={styles.row}>
             <Text style={styles.rowLabel}>Photos & Videos</Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.row, styles.divider]}
+            <Icon name="chevron-forward" size={18} color={colors.faint} />
+          </ListRow>
+          <ListRow
+            divider
             onPress={() => router.push({ pathname: '/files', params: { search: '1' } })}
-            hitSlop={{ top: 8, bottom: 8 }}>
+            style={styles.row}>
             <Text style={styles.rowLabel}>Search</Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-        </Card>
+            <Icon name="chevron-forward" size={18} color={colors.faint} />
+          </ListRow>
+        </ListSection>
       </ScrollView>
     </SafeAreaView>
   );
@@ -131,33 +144,23 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.xl },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   avatar: {
-    width: 44,
-    height: 44,
+    width: 32,
+    height: 32,
     borderRadius: radius.full,
     backgroundColor: colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { color: colors.primary, fontSize: 20, fontWeight: '600' },
+  avatarText: { ...type.headline, color: colors.primary },
   statusGroup: { gap: spacing.xs },
-  status: { fontSize: 17, fontWeight: '600' },
+  status: { ...type.headline },
   syncButton: { marginTop: spacing.md },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: layout.row,
-  },
-  divider: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    gap: spacing.md,
   },
   rowLabel: { ...type.headline },
-  chevron: { color: colors.faint, fontSize: 22, fontWeight: '600' },
 });

@@ -1,11 +1,17 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  type TextInputInstance,
+} from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { createUser } from '../api';
 import { Card } from '../components/Card';
 import { PrimaryButton } from '../components/PrimaryButton';
-import { ScreenHeader } from '../components/ScreenHeader';
 import { TextField } from '../components/TextField';
 import { colors, spacing, type } from '../theme';
 
@@ -16,6 +22,7 @@ export function NewUserScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const passwordRef = useRef<TextInputInstance>(null);
 
   async function submit() {
     setError('');
@@ -30,49 +37,57 @@ export function NewUserScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <ScreenHeader title="New user" />
-      <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}
-        keyboardShouldPersistTaps="handled">
-        <Card style={styles.card}>
-          <View style={styles.group}>
-            <Text style={styles.sectionTitle}>Who is joining?</Text>
-            <View style={styles.fields}>
-              <TextField
-                placeholder="Name (username)"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={username}
-                onChangeText={setUsername}
-              />
-              <TextField
-                placeholder="Password (min 8 characters)"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-              />
-            </View>
-          </View>
-          {error !== '' && <Text style={styles.error}>{error}</Text>}
-          <PrimaryButton
-            title="Create user"
-            loading={busy}
-            disabled={username.trim() === '' || password.length < 8}
-            onPress={submit}
-          />
-        </Card>
-      </ScrollView>
+    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
+      <KeyboardAvoidingView
+        style={styles.screen}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}
+          keyboardShouldPersistTaps="handled">
+          <Card style={styles.card}>
+            <TextField
+              label="Username"
+              placeholder="Name (username)"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="username"
+              textContentType="username"
+              returnKeyType="next"
+              submitBehavior="submit"
+              value={username}
+              onChangeText={setUsername}
+              onSubmitEditing={() => passwordRef.current?.focus()}
+            />
+            <TextField
+              ref={passwordRef}
+              label="Password"
+              hint="At least 8 characters"
+              placeholder="Password"
+              secureTextEntry
+              autoComplete="new-password"
+              textContentType="newPassword"
+              returnKeyType="go"
+              value={password}
+              onChangeText={setPassword}
+              onSubmitEditing={submit}
+            />
+            {error !== '' && <Text style={styles.error}>{error}</Text>}
+            <PrimaryButton
+              title="Create user"
+              loading={busy}
+              disabled={username.trim() === '' || password.length < 8}
+              onPress={submit}
+            />
+          </Card>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  content: { paddingBottom: spacing.xxl },
-  card: { marginHorizontal: spacing.lg, gap: spacing.md },
-  group: { gap: spacing.sm },
-  fields: { gap: spacing.md },
-  sectionTitle: { ...type.caption, textTransform: 'uppercase' },
+  content: { padding: spacing.lg },
+  card: { gap: spacing.md },
   error: { ...type.sub, color: colors.danger },
 });

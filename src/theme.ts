@@ -49,9 +49,12 @@ export const spacing = {
 } as const;
 
 export const type = {
+  display: { fontSize: 40, fontWeight: '600', color: colors.fg },
   title: { fontSize: 28, fontWeight: '700', color: colors.fg, letterSpacing: -0.4 },
+  metric: { fontSize: 20, fontWeight: '600', color: colors.fg },
   headline: { fontSize: 17, fontWeight: '600', color: colors.fg },
   body: { fontSize: 17, color: colors.fg },
+  bodySm: { fontSize: 15, color: colors.fg },
   sub: { fontSize: 15, color: colors.muted },
   meta: { fontSize: 13, color: colors.muted },
   caption: { fontSize: 12, fontWeight: '600', color: colors.muted, letterSpacing: 0.3 },

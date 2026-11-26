@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   View,
+  type TextInputInstance,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -15,7 +16,7 @@ import { PrimaryButton } from '../components/PrimaryButton';
 import { TextField } from '../components/TextField';
 import { colors, spacing, type } from '../theme';
 
-/** Login: brand block + white form card + full-width green primary button. */
+/** Login: brand block + white form card + full-width primary button. */
 export function LoginScreen() {
   const insets = useSafeAreaInsets();
   // On a physical phone, localhost won't reach the Mac — use the Mac's LAN IP.
@@ -24,6 +25,8 @@ export function LoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const usernameRef = useRef<TextInputInstance>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
 
   async function submit() {
     setError('');
@@ -52,36 +55,46 @@ export function LoginScreen() {
           </View>
 
           <Card style={styles.card}>
-            <View style={styles.group}>
-              <Text style={styles.sectionTitle}>Server</Text>
-              <TextField
-                placeholder="http://192.168.1.20:8080"
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-                value={serverUrl}
-                onChangeText={setServerUrl}
-              />
-            </View>
-
-            <View style={styles.group}>
-              <Text style={styles.sectionTitle}>Account</Text>
-              <View style={styles.fields}>
-                <TextField
-                  placeholder="Username"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  value={username}
-                  onChangeText={setUsername}
-                />
-                <TextField
-                  placeholder="Password"
-                  secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
-                />
-              </View>
-            </View>
+            <TextField
+              label="Server URL"
+              placeholder="http://192.168.1.20:8080"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+              autoComplete="url"
+              textContentType="URL"
+              returnKeyType="next"
+              submitBehavior="submit"
+              value={serverUrl}
+              onChangeText={setServerUrl}
+              onSubmitEditing={() => usernameRef.current?.focus()}
+            />
+            <TextField
+              ref={usernameRef}
+              label="Username"
+              placeholder="Username"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="username"
+              textContentType="username"
+              returnKeyType="next"
+              submitBehavior="submit"
+              value={username}
+              onChangeText={setUsername}
+              onSubmitEditing={() => passwordRef.current?.focus()}
+            />
+            <TextField
+              ref={passwordRef}
+              label="Password"
+              placeholder="Password"
+              secureTextEntry
+              autoComplete="current-password"
+              textContentType="password"
+              returnKeyType="go"
+              value={password}
+              onChangeText={setPassword}
+              onSubmitEditing={submit}
+            />
 
             {error !== '' && <Text style={styles.error}>{error}</Text>}
             <PrimaryButton title="Sign in" loading={busy} onPress={submit} />
@@ -97,8 +110,5 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg, gap: spacing.xl },
   brand: { alignItems: 'center', gap: spacing.xs },
   card: { gap: spacing.md },
-  group: { gap: spacing.sm },
-  fields: { gap: spacing.md },
-  sectionTitle: { ...type.caption, textTransform: 'uppercase' },
   error: { ...type.sub, color: colors.danger },
 });

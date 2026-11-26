@@ -1,11 +1,13 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect, useLocalSearchParams, router } from 'expo-router';
+import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { listFilesAt, type FileSummary } from '../api';
-import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { ErrorState } from '../components/ErrorState';
+import { ListRow } from '../components/ListRow';
+import { listSectionStyle } from '../components/ListSection';
+import { LoadingState } from '../components/LoadingState';
 import { colors, spacing, type } from '../theme';
 
 const mb = (bytes: number) =>
@@ -20,62 +22,75 @@ export function SharedFolderScreen() {
   const folder = typeof path === 'string' ? path : '';
   const [files, setFiles] = useState<FileSummary[] | null>(null);
   const [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (folder === '') return;
-      let alive = true;
-      listFilesAt(`${folder}/`)
-        .then(l => alive && (setFiles(l), setError('')))
-        .catch(e => alive && setError(e instanceof Error ? e.message : String(e)));
-      return () => {
-        alive = false;
-      };
-    }, [folder]),
-  );
+  const load = useCallback(async () => {
+    if (folder === '') return;
+    try {
+      setFiles(await listFilesAt(`${folder}/`));
+      setError('');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, [folder]);
+
+  useFocusEffect(useCallback(() => {
+    void load();
+  }, [load]));
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
+
+  const title = folder.split('/').pop() ?? 'Shared folder';
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <ScreenHeader title={folder.split('/').pop() ?? 'Shared folder'} />
-
+    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
+      <Stack.Screen options={{ title }} />
       {owner !== undefined && <Text style={styles.sub}>Shared by {owner}</Text>}
 
       {error !== '' ? (
-        <Text style={styles.error}>{error}</Text>
+        <ErrorState message={error} onRetry={load} />
       ) : files === null ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.secondary} />
-        </View>
+        <LoadingState />
       ) : (
-        <FlatList
-          contentContainerStyle={[styles.listContent, { paddingBottom: spacing.xl + insets.bottom }]}
-          data={files}
-          keyExtractor={f => f.path}
-          ListEmptyComponent={<EmptyState text="The owner has no files here any more" />}
-          renderItem={({ item }) => (
-            <Card
-              style={styles.row}
-              onPress={() =>
-                router.push({
-                  pathname: '/viewer',
-                  params: {
-                    path: item.path,
-                    sizeBytes: String(item.sizeBytes),
-                    versionCount: String(item.versionCount),
-                    lastModified: item.lastModified,
-                    readOnly: '1',
-                  },
-                })
-              }>
-              <Text style={styles.path} numberOfLines={1}>
-                {item.path.split('/').pop()}
-              </Text>
-              <Text style={styles.meta}>
-                {mb(item.sizeBytes)} · {new Date(item.lastModified).toLocaleString()}
-              </Text>
-            </Card>
-          )}
-        />
+        <View style={[styles.listWrap, { paddingBottom: insets.bottom }]}>
+          <FlatList
+            contentContainerStyle={listSectionStyle}
+            data={files}
+            keyExtractor={f => f.path}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            ListEmptyComponent={
+              <EmptyState text="The owner has no files here any more" style={styles.empty} />
+            }
+            renderItem={({ item, index }) => (
+              <ListRow
+                divider={index > 0}
+                onPress={() =>
+                  router.push({
+                    pathname: '/viewer',
+                    params: {
+                      path: item.path,
+                      sizeBytes: String(item.sizeBytes),
+                      versionCount: String(item.versionCount),
+                      lastModified: item.lastModified,
+                      readOnly: '1',
+                    },
+                  })
+                }
+                style={styles.row}>
+                <Text style={styles.path} numberOfLines={1}>
+                  {item.path.split('/').pop()}
+                </Text>
+                <Text style={styles.meta}>
+                  {mb(item.sizeBytes)} · {new Date(item.lastModified).toLocaleString()}
+                </Text>
+              </ListRow>
+            )}
+          />
+        </View>
       )}
     </SafeAreaView>
   );
@@ -83,11 +98,10 @@ export function SharedFolderScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  centered: { flex: 1, justifyContent: 'center' },
-  sub: { textAlign: 'center', ...type.meta, paddingBottom: spacing.sm },
-  listContent: { paddingHorizontal: spacing.lg, gap: spacing.sm },
-  row: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg, gap: spacing.xs },
-  path: { ...type.body, fontSize: 15, fontWeight: '500' },
+  sub: { textAlign: 'center', ...type.meta, paddingTop: spacing.sm },
+  listWrap: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.sm },
+  row: { gap: spacing.xs },
+  path: { ...type.bodySm, fontWeight: '500' },
   meta: type.meta,
-  error: { ...type.sub, color: colors.danger, textAlign: 'center', padding: spacing.lg },
+  empty: { marginTop: spacing.xl, paddingHorizontal: spacing.lg },
 });

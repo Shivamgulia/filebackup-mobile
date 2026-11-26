@@ -1,5 +1,5 @@
 import { StyleSheet, Text } from 'react-native';
-import { colors, radius } from '../theme';
+import { colors, radius, type } from '../theme';
 
 const variants = {
   admin: { color: colors.primary, backgroundColor: colors.primarySoft },
@@ -13,13 +13,11 @@ export function Badge({ label, variant }: { label: string; variant: keyof typeof
 
 const styles = StyleSheet.create({
   badge: {
-    fontSize: 12,
-    fontWeight: '600',
+    ...type.caption,
     paddingVertical: 2,
     paddingHorizontal: 8,
     borderRadius: radius.full,
     overflow: 'hidden',
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
   },
 });

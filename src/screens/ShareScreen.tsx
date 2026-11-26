@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
-  Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,7 +15,7 @@ import { createShare } from '../api';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { PrimaryButton } from '../components/PrimaryButton';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { SectionLabel } from '../components/SectionLabel';
 import { TextField } from '../components/TextField';
 import { colors, radius, spacing, type } from '../theme';
 
@@ -54,101 +55,108 @@ export function ShareScreen() {
       for (const p of sharePaths) {
         await createShare({ targetUsername: user, resourcePath: p, permission, expiresAt });
       }
-      Alert.alert(
-        'Shared',
-        `${sharePaths.length} item${sharePaths.length === 1 ? '' : 's'} shared with ${user}. ` +
-          'They can see it after accepting.',
-        [{ text: 'OK', onPress: () => router.back() }],
-      );
+      // The list refetches on focus; the new share is the confirmation.
+      router.back();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-    } finally {
       setBusy(false);
     }
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <ScreenHeader title="Share" />
-
-      {targets.length === 0 ? (
-        <EmptyState text="Nothing to share" />
-      ) : (
-        <ScrollView
-          contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}
-          keyboardShouldPersistTaps="handled">
-          <Card style={styles.card}>
-            <Text style={type.caption}>WHAT</Text>
-            {sharePaths.map(p => (
-              <Text key={p} style={styles.path} numberOfLines={1}>
-                {p}
-              </Text>
-            ))}
-          </Card>
-
-          <Card style={styles.card}>
-            <Text style={type.caption}>SHARE WITH</Text>
-            <TextField
-              placeholder="Username"
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={recipient}
-              onChangeText={t => {
-                setRecipient(t);
-                setError('');
-              }}
-            />
-          </Card>
-
-          <Card style={styles.card}>
-            <Text style={type.caption}>PERMISSION</Text>
-            <View style={styles.segments}>
-              <Pressable
-                style={[styles.segment, permission === 'read' && styles.segmentActive]}
-                onPress={() => setPermission('read')}>
-                <Text style={[styles.segmentText, permission === 'read' && styles.segmentTextActive]}>Read</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.segment, permission === 'read_write' && styles.segmentActive]}
-                onPress={() => setPermission('read_write')}>
-                <Text style={[styles.segmentText, permission === 'read_write' && styles.segmentTextActive]}>
-                  Read-write
+    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
+      <KeyboardAvoidingView
+        style={styles.screen}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {targets.length === 0 ? (
+          <EmptyState text="Nothing to share" />
+        ) : (
+          <ScrollView
+            contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}
+            keyboardShouldPersistTaps="handled">
+            <Card style={styles.card}>
+              <SectionLabel>What</SectionLabel>
+              {sharePaths.map(p => (
+                <Text key={p} style={styles.path} numberOfLines={1}>
+                  {p}
                 </Text>
-              </Pressable>
-            </View>
-          </Card>
+              ))}
+            </Card>
 
-          <Card style={styles.card}>
-            <Text style={type.caption}>EXPIRES</Text>
-            <View style={styles.segments}>
-              {EXPIRIES.map(option => (
+            <Card style={styles.card}>
+              <TextField
+                label="Username"
+                placeholder="Who is it for?"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="username"
+                textContentType="username"
+                value={recipient}
+                onChangeText={t => {
+                  setRecipient(t);
+                  setError('');
+                }}
+              />
+            </Card>
+
+            <Card style={styles.card}>
+              <SectionLabel>Permission</SectionLabel>
+              <View style={styles.segments} accessibilityRole="radiogroup">
                 <Pressable
-                  key={option.key}
-                  style={[styles.segment, expiry === option.key && styles.segmentActive]}
-                  onPress={() => setExpiry(option.key)}>
-                  <Text style={[styles.segmentText, expiry === option.key && styles.segmentTextActive]}>
-                    {option.label}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: permission === 'read' }}
+                  style={[styles.segment, permission === 'read' && styles.segmentActive]}
+                  onPress={() => setPermission('read')}>
+                  <Text style={[styles.segmentText, permission === 'read' && styles.segmentTextActive]}>
+                    Read
                   </Text>
                 </Pressable>
-              ))}
-            </View>
-          </Card>
-
-          {single && (
-            <Card style={[styles.card, styles.switchRow]}>
-              <View style={styles.switchText}>
-                <Text style={type.headline}>Share the whole folder</Text>
-                <Text style={styles.hint}>{parentOf(targets[0])}</Text>
+                <Pressable
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: permission === 'read_write' }}
+                  style={[styles.segment, permission === 'read_write' && styles.segmentActive]}
+                  onPress={() => setPermission('read_write')}>
+                  <Text style={[styles.segmentText, permission === 'read_write' && styles.segmentTextActive]}>
+                    Read-write
+                  </Text>
+                </Pressable>
               </View>
-              <Switch value={wholeFolder} onValueChange={setWholeFolder} />
             </Card>
-          )}
 
-          {error !== '' && <Text style={styles.error}>{error}</Text>}
+            <Card style={styles.card}>
+              <SectionLabel>Expires</SectionLabel>
+              <View style={styles.segments} accessibilityRole="radiogroup">
+                {EXPIRIES.map(option => (
+                  <Pressable
+                    key={option.key}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: expiry === option.key }}
+                    style={[styles.segment, expiry === option.key && styles.segmentActive]}
+                    onPress={() => setExpiry(option.key)}>
+                    <Text style={[styles.segmentText, expiry === option.key && styles.segmentTextActive]}>
+                      {option.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </Card>
 
-          <PrimaryButton title="Create share" loading={busy} onPress={submit} style={styles.cta} />
-        </ScrollView>
-      )}
+            {single && (
+              <Card style={[styles.card, styles.switchRow]}>
+                <View style={styles.switchText}>
+                  <Text style={type.headline}>Share the whole folder</Text>
+                  <Text style={styles.hint}>{parentOf(targets[0])}</Text>
+                </View>
+                <Switch value={wholeFolder} onValueChange={setWholeFolder} />
+              </Card>
+            )}
+
+            {error !== '' && <Text style={styles.error}>{error}</Text>}
+
+            <PrimaryButton title="Create share" loading={busy} onPress={submit} style={styles.cta} />
+          </ScrollView>
+        )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -175,7 +183,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, gap: spacing.md },
   card: { gap: spacing.sm },
-  path: { ...type.body, fontSize: 15 },
+  path: type.bodySm,
   segments: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
   segment: {
     minHeight: 44,
@@ -187,7 +195,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.fill,
   },
   segmentActive: { backgroundColor: colors.primarySoft },
-  segmentText: { fontSize: 15, color: colors.muted, fontWeight: '600' },
+  segmentText: { ...type.bodySm, color: colors.muted, fontWeight: '600' },
   segmentTextActive: { color: colors.primary },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   switchText: { flex: 1, gap: spacing.xs },

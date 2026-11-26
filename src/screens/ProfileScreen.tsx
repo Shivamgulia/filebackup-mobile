@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -13,11 +11,13 @@ import { router } from 'expo-router';
 import * as api from '../api';
 import * as db from '../db';
 import { Badge } from '../components/Badge';
-import { Card } from '../components/Card';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { colors, layout, radius, spacing, type } from '../theme';
+import { Icon } from '../components/Icon';
+import { ListRow } from '../components/ListRow';
+import { ListSection } from '../components/ListSection';
+import { LoadingState } from '../components/LoadingState';
+import { colors, radius, spacing, type } from '../theme';
 
-/** J4 — account: iOS-Settings-style identity card + account rows. */
+/** J4 — account: identity block + inset-grouped account rows. */
 export function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const [me, setMe] = useState<{ username: string; admin: boolean } | null>(null);
@@ -46,15 +46,14 @@ export function ProfileScreen() {
 
   if (me === null) {
     return (
-      <SafeAreaView style={[styles.screen, styles.centered]}>
-        <ActivityIndicator size="large" color={colors.secondary} />
+      <SafeAreaView style={styles.screen} edges={['left', 'right']}>
+        <LoadingState />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <ScreenHeader title="Profile" />
+    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
       <ScrollView contentContainerStyle={[styles.content, { paddingBottom: spacing.xxl + insets.bottom }]}>
         <View style={styles.identity}>
           <View style={styles.avatar}>
@@ -65,30 +64,30 @@ export function ProfileScreen() {
           <Text style={type.sub}>Server {server}</Text>
         </View>
 
-        <Card style={styles.card}>
+        <ListSection style={styles.card}>
           {me.admin && (
-            <TouchableOpacity style={styles.row} onPress={() => router.push('/users')} hitSlop={{ top: 8, bottom: 8 }}>
+            <ListRow onPress={() => router.push('/users')} style={styles.row}>
               <Text style={styles.rowLabel}>User management</Text>
-              <Text style={styles.chevron}>›</Text>
-            </TouchableOpacity>
+              <Icon name="chevron-forward" size={18} color={colors.faint} />
+            </ListRow>
           )}
-          <TouchableOpacity
-            style={[styles.row, me.admin && styles.divider]}
+          <ListRow
+            divider={me.admin}
             onPress={() => router.push('/shared')}
-            hitSlop={{ top: 8, bottom: 8 }}>
+            style={styles.row}>
             <Text style={styles.rowLabel}>Sharing</Text>
-            <Text style={styles.chevron}>›</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.row, styles.divider]} onPress={resetIndex} hitSlop={{ top: 8, bottom: 8 }}>
+            <Icon name="chevron-forward" size={18} color={colors.faint} />
+          </ListRow>
+          <ListRow divider onPress={resetIndex} style={styles.row}>
             <Text style={[styles.rowLabel, styles.dangerText]}>Reset local index</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.row, styles.divider]}
-            hitSlop={{ top: 8, bottom: 8 }}
-            onPress={() => api.logout().then(() => router.replace('/login'))}>
+          </ListRow>
+          <ListRow
+            divider
+            onPress={() => api.logout().then(() => router.replace('/login'))}
+            style={styles.row}>
             <Text style={[styles.rowLabel, styles.dangerText]}>Sign out</Text>
-          </TouchableOpacity>
-        </Card>
+          </ListRow>
+        </ListSection>
       </ScrollView>
     </SafeAreaView>
   );
@@ -96,7 +95,6 @@ export function ProfileScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  centered: { justifyContent: 'center' },
   content: { paddingBottom: spacing.xxl },
   identity: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xl },
   avatar: {
@@ -108,19 +106,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.xs,
   },
-  avatarText: { color: colors.primary, fontSize: 40, fontWeight: '600' },
-  card: { marginHorizontal: spacing.lg, paddingVertical: 0, paddingHorizontal: spacing.lg },
+  avatarText: { ...type.display, color: colors.primary },
+  card: { marginHorizontal: spacing.lg },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: layout.row,
-  },
-  divider: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    gap: spacing.md,
   },
   rowLabel: { ...type.headline },
-  chevron: { color: colors.faint, fontSize: 22, fontWeight: '600' },
   dangerText: { color: colors.danger },
 });

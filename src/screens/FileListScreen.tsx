@@ -4,19 +4,24 @@ import {
   Alert,
   type AlertButton,
   FlatList,
+  Pressable,
+  RefreshControl,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
   type TextInputInstance,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Stack, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { deleteFile, listFiles, type FileSummary } from '../api';
-import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { ErrorState } from '../components/ErrorState';
+import { Icon } from '../components/Icon';
+import { ListRow } from '../components/ListRow';
+import { listSectionStyle } from '../components/ListSection';
+import { LoadingState } from '../components/LoadingState';
+import { TextButton } from '../components/TextButton';
 import { colors, radius, spacing, type } from '../theme';
 
 const PAGE_SIZE = 20;
@@ -46,20 +51,28 @@ export function FileListScreen() {
   const [searchActive, setSearchActive] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [isSelectMode, setSelectMode] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const inputRef = useRef<TextInputInstance>(null);
 
+  const load = useCallback(async () => {
+    try {
+      setAll(await listFiles());
+      setError('');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }, []);
+
   // Refetch on every focus — covers deletes made in the viewer and app re-opens.
-  useFocusEffect(
-    useCallback(() => {
-      let alive = true;
-      listFiles()
-        .then(l => alive && (setAll(l), setError('')))
-        .catch(e => alive && setError(e instanceof Error ? e.message : String(e)));
-      return () => {
-        alive = false;
-      };
-    }, []),
-  );
+  useFocusEffect(useCallback(() => {
+    void load();
+  }, [load]));
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }, [load]);
 
   // Opened via home's Search row → focus the field immediately.
   useEffect(() => {
@@ -178,42 +191,40 @@ export function FileListScreen() {
 
   if (error !== '') {
     return (
-      <SafeAreaView style={[styles.screen, styles.centered]}>
-        <Text style={styles.error}>{error}</Text>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.backLink}>‹ Back</Text>
-        </TouchableOpacity>
+      <SafeAreaView style={styles.screen} edges={['left', 'right']}>
+        <ErrorState message={error} onRetry={load} />
       </SafeAreaView>
     );
   }
   if (all === null || shown === null) {
     return (
-      <SafeAreaView style={[styles.screen, styles.centered]}>
-        <ActivityIndicator size="large" color={colors.secondary} />
+      <SafeAreaView style={styles.screen} edges={['left', 'right']}>
+        <LoadingState />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
-      <ScreenHeader
-        title="Photos & Videos"
-        right={
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              onPress={isSelectMode ? exitSelect : () => setSelectMode(true)}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.select}>{isSelectMode ? 'Done' : 'Select'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={pickSort}
-              accessibilityRole="button"
-              accessibilityLabel="Sort"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.sortIcon}>⇅</Text>
-            </TouchableOpacity>
-          </View>
-        }
+    <SafeAreaView style={styles.screen} edges={['left', 'right']}>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              <TextButton
+                title={isSelectMode ? 'Done' : 'Select'}
+                onPress={isSelectMode ? exitSelect : () => setSelectMode(true)}
+              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Sort"
+                onPress={pickSort}
+                hitSlop={8}
+                style={styles.iconButton}>
+                <Icon name="swap-vertical" size={20} color={colors.primary} />
+              </Pressable>
+            </View>
+          ),
+        }}
       />
 
       <View style={styles.searchRow}>
@@ -221,7 +232,7 @@ export function FileListScreen() {
           ref={inputRef}
           style={styles.searchField}
           placeholder="Search"
-          placeholderTextColor={colors.faint}
+          placeholderTextColor={colors.muted}
           autoCapitalize="none"
           autoCorrect={false}
           value={query}
@@ -232,48 +243,52 @@ export function FileListScreen() {
           }}
         />
         {(searchActive || query !== '') && (
-          <TouchableOpacity
-            hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+          <TextButton
+            title="Cancel"
+            variant="quiet"
             onPress={() => {
               setQuery('');
               setSearchActive(false);
               inputRef.current?.blur();
-            }}>
-            <Text style={styles.cancel}>Cancel</Text>
-          </TouchableOpacity>
+            }}
+          />
         )}
       </View>
 
-      <FlatList
-        contentContainerStyle={[styles.listContent, { paddingBottom: spacing.xl + insets.bottom }]}
-        data={shown.slice(0, visible)}
-        keyExtractor={f => f.path}
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        keyboardShouldPersistTaps="handled"
-        renderItem={({ item }) => (
-          <Card
-            style={styles.row}
-            onPress={() => {
-              if (isSelectMode) {
-                toggleSelect(item.path);
-              } else {
-                router.push({
-                  pathname: '/viewer',
-                  params: {
-                    path: item.path,
-                    sizeBytes: String(item.sizeBytes),
-                    versionCount: String(item.versionCount),
-                    lastModified: String(item.lastModified),
-                  },
-                });
-              }
-            }}
-            onLongPress={() => (isSelectMode ? toggleSelect(item.path) : showActions(item))}>
-            <View style={styles.rowMain}>
+      <View style={[styles.listWrap, { paddingBottom: isSelectMode ? spacing.sm : insets.bottom }]}>
+        <FlatList
+          contentContainerStyle={listSectionStyle}
+          data={shown.slice(0, visible)}
+          keyExtractor={f => f.path}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          renderItem={({ item, index }) => (
+            <ListRow
+              divider={index > 0}
+              style={styles.row}
+              onPress={() => {
+                if (isSelectMode) {
+                  toggleSelect(item.path);
+                } else {
+                  router.push({
+                    pathname: '/viewer',
+                    params: {
+                      path: item.path,
+                      sizeBytes: String(item.sizeBytes),
+                      versionCount: String(item.versionCount),
+                      lastModified: String(item.lastModified),
+                    },
+                  });
+                }
+              }}
+              onLongPress={() => (isSelectMode ? toggleSelect(item.path) : showActions(item))}>
               {isSelectMode && (
                 <View style={[styles.checkbox, selected.has(item.path) && styles.checkboxOn]}>
-                  {selected.has(item.path) && <Text style={styles.checkmark}>✓</Text>}
+                  {selected.has(item.path) && (
+                    <Icon name="checkmark" size={14} color={colors.onPrimary} />
+                  )}
                 </View>
               )}
               <View style={styles.rowText}>
@@ -285,47 +300,38 @@ export function FileListScreen() {
                   {new Date(item.lastModified).toLocaleString()}
                 </Text>
               </View>
-            </View>
-          </Card>
-        )}
-        ListEmptyComponent={
-          <EmptyState text={query !== '' ? `No matches for "${query.trim()}"` : 'Nothing backed up yet'} />
-        }
-        ListFooterComponent={
-          visible < shown.length
-            ? <ActivityIndicator style={styles.footer} color={colors.secondary} />
-            : undefined
-        }
-      />
+            </ListRow>
+          )}
+          ListEmptyComponent={
+            <EmptyState
+              text={query !== '' ? `No matches for "${query.trim()}"` : 'Nothing backed up yet'}
+              style={styles.empty}
+            />
+          }
+          ListFooterComponent={
+            visible < shown.length
+              ? <ActivityIndicator style={styles.footer} color={colors.secondary} />
+              : undefined
+          }
+        />
+      </View>
 
       {isSelectMode && (
         <View style={[styles.selectBar, { paddingBottom: spacing.md + insets.bottom }]}>
-          <TouchableOpacity onPress={exitSelect} hitSlop={{ top: 8, bottom: 8 }}>
-            <Text style={styles.barAction}>Cancel</Text>
-          </TouchableOpacity>
+          <TextButton title="Cancel" variant="quiet" onPress={exitSelect} />
           <Text style={styles.barCount}>{selected.size} selected</Text>
           <View style={styles.barActions}>
-            <TouchableOpacity
+            <TextButton
+              title={`Share (${selected.size})`}
               disabled={selected.size === 0}
               onPress={() => share(Array.from(selected))}
-              hitSlop={{ top: 8, bottom: 8 }}>
-              <Text style={[styles.barAction, selected.size === 0 && styles.barDisabled]}>
-                Share ({selected.size})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            />
+            <TextButton
+              title={`Delete (${selected.size})`}
+              variant="destructive"
               disabled={selected.size === 0}
               onPress={deleteSelected}
-              hitSlop={{ top: 8, bottom: 8 }}>
-              <Text
-                style={[
-                  styles.barAction,
-                  styles.barDanger,
-                  selected.size === 0 && styles.barDisabled,
-                ]}>
-                Delete ({selected.size})
-              </Text>
-            </TouchableOpacity>
+            />
           </View>
         </View>
       )}
@@ -335,16 +341,14 @@ export function FileListScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
-  centered: { justifyContent: 'center', alignItems: 'center', gap: spacing.md },
-  backLink: { color: colors.primary, fontSize: 17, fontWeight: '600' },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  select: { color: colors.primary, fontSize: 17, fontWeight: '600' },
-  sortIcon: { color: colors.primary, fontSize: 20, fontWeight: '600' },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  iconButton: { minWidth: 32, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
   },
   searchField: {
@@ -354,16 +358,13 @@ const styles = StyleSheet.create({
     borderCurve: 'continuous',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    fontSize: 17,
-    color: colors.fg,
+    ...type.body,
   },
-  cancel: { color: colors.primary, fontSize: 17 },
-  listContent: { paddingHorizontal: spacing.lg, gap: spacing.sm },
-  row: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
-  path: { ...type.body, fontSize: 15, fontWeight: '500' },
-  meta: type.meta,
-  rowMain: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  listWrap: { flex: 1, paddingHorizontal: spacing.lg },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   rowText: { flex: 1, gap: spacing.xs },
+  path: { ...type.bodySm, fontWeight: '500' },
+  meta: type.meta,
   checkbox: {
     width: 22,
     height: 22,
@@ -374,7 +375,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  checkmark: { color: colors.onPrimary, fontSize: 13, fontWeight: '700' },
   selectBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -388,11 +388,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.card,
   },
-  barAction: { color: colors.primary, fontSize: 17, fontWeight: '600' },
-  barDanger: { color: colors.danger },
-  barDisabled: { opacity: 0.4 },
   barCount: { ...type.sub, flex: 1, textAlign: 'center' },
   barActions: { flexDirection: 'row', gap: spacing.lg },
+  empty: { marginTop: spacing.xl, paddingHorizontal: spacing.lg },
   footer: { marginVertical: spacing.md },
-  error: { color: colors.danger, textAlign: 'center' },
 });

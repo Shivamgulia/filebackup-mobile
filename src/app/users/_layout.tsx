@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { Slot, router } from 'expo-router';
+import { Stack, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as api from '../../api';
 import { colors } from '../../theme';
@@ -26,7 +26,21 @@ export default function UsersLayout() {
     router.replace('/home');
     return null;
   }
-  return <Slot />;
+  return (
+    <Stack
+      screenOptions={{
+        headerBackTitle: 'Back',
+        headerTintColor: colors.primary,
+        headerTitleStyle: { color: colors.fg },
+        headerStyle: { backgroundColor: colors.bg },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: colors.bg },
+      }}>
+      <Stack.Screen name="index" options={{ title: 'Users' }} />
+      <Stack.Screen name="new" options={{ title: 'New user' }} />
+      <Stack.Screen name="[username]" options={{ title: 'User' }} />
+    </Stack>
+  );
 }
 
 const styles = StyleSheet.create({

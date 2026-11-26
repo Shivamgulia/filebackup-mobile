@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { File, Paths } from 'expo-file-system';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { authHeaders, deleteFile, getServerUrl, type FileSummary } from '../api';
+import { Icon } from '../components/Icon';
 import { colors, layout, spacing, type } from '../theme';
 
 const VIDEO_RE = /\.(mov|mp4|m4v|avi|webm|mkv)$/i;
@@ -65,25 +66,35 @@ export function FileViewerScreen({ item, onBack, onDeleted, readOnly = false }: 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <View style={styles.topbar}>
-        <TouchableOpacity onPress={onBack} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.topAction}>‹ Back</Text>
-        </TouchableOpacity>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          style={({ pressed }) => [styles.back, pressed && styles.pressed]}
+          onPress={onBack}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Icon name="chevron-back" size={22} color={colors.onPrimary} />
+          <Text style={styles.topAction}>Back</Text>
+        </Pressable>
         <Text style={styles.name} numberOfLines={1}>
           {item.path.split('/').pop()}
         </Text>
         {readOnly ? (
           <View style={styles.spacer} />
         ) : (
-          <TouchableOpacity onPress={confirmDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <Pressable
+            accessibilityRole="button"
+            style={({ pressed }) => pressed && styles.pressed}
+            onPress={confirmDelete}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Text style={[styles.topAction, styles.delete]}>Delete</Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
       <View style={styles.content}>
         {error !== '' ? (
           <Text style={styles.error}>{error}</Text>
         ) : uri === null ? (
-          <ActivityIndicator size="large" color="#fff" />
+          <ActivityIndicator size="large" color={colors.onPrimary} />
         ) : isVideo ? (
           <VideoView player={player} style={styles.media} nativeControls contentFit="contain" />
         ) : (
@@ -95,6 +106,7 @@ export function FileViewerScreen({ item, onBack, onDeleted, readOnly = false }: 
 }
 
 const styles = StyleSheet.create({
+  // Black media canvas is intentional; everything on it uses onPrimary white.
   screen: { flex: 1, backgroundColor: '#000' },
   topbar: {
     minHeight: layout.control,
@@ -104,11 +116,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.md,
   },
-  topAction: { color: '#fff', fontSize: 17, fontWeight: '600' },
+  back: { flexDirection: 'row', alignItems: 'center', minHeight: 44 },
+  pressed: { opacity: 0.6 },
+  topAction: { ...type.headline, color: colors.onPrimary },
   // Matches the Delete label's width so the filename stays centered when read-only.
   spacer: { width: 44 },
   delete: { color: colors.danger },
-  name: { ...type.headline, color: '#fff', flex: 1, textAlign: 'center' },
+  name: { ...type.headline, color: colors.onPrimary, flex: 1, textAlign: 'center' },
   content: { flex: 1, justifyContent: 'center' },
   media: { flex: 1 },
   error: { ...type.sub, color: colors.danger, textAlign: 'center', padding: spacing.xl },

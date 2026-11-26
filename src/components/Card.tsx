@@ -2,21 +2,35 @@ import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { colors, radius, spacing } from '../theme';
 
-/** White surface for cards and list rows; pressable when a handler is given. */
+/** White surface for panels and forms; pressable when a handler is given. */
 export function Card({
   children,
   onPress,
   onLongPress,
+  disabled = false,
   style,
 }: {
   children: ReactNode;
   onPress?: () => void;
   onLongPress?: () => void;
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
-  if (onPress || onLongPress) {
+  const interactive = !!(onPress || onLongPress);
+  if (interactive) {
     return (
-      <Pressable style={[styles.card, style]} onPress={onPress} onLongPress={onLongPress}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ disabled }}
+        disabled={disabled}
+        onPress={onPress}
+        onLongPress={onLongPress}
+        style={({ pressed }) => [
+          styles.card,
+          pressed && styles.pressed,
+          disabled && styles.disabled,
+          style,
+        ]}>
         {children}
       </Pressable>
     );
@@ -33,4 +47,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: spacing.lg,
   },
+  pressed: { backgroundColor: colors.fill },
+  disabled: { opacity: 0.5 },
 });
